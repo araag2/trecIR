@@ -67,8 +67,9 @@ if __name__ == '__main__':
 
     # python parse_xml-to-JSON.py --input datasets/TREC2021/TREC2021_CT_corpus.json --output datasets/TREC2021/TREC2021_CT_corpus.json
 
-    with safe_open_w("datasets/TREC2021/TREC2021_CT_corpus.json") as output_file_json_lines:
-        print(json.load(output_file_json_lines))
+    with open("datasets/TREC2021/TREC2021_CT_corpus.json") as output_file_json_lines:
+        json_input_queries = json.load(output_file_json_lines)
+        print(json_input_queries)
         quit()
 
     with safe_open_w(args.output) as output_file_json:
