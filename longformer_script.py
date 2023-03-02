@@ -6,9 +6,9 @@ from tqdm import tqdm
 from torch.optim import AdamW
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2ForSequenceClassification
 
-def create_path(path : set):
+def create_path(path : str):
     os.makedirs(path, exist_ok=True)
-    assert os.path.isdir(path)
+    assert os.path.isdir(path), f'No such dir: {path}'
 
 def create_longformer_tokenizer(model_str : str , max_length : int, save_path : str):
   tokenizer = GPT2Tokenizer.from_pretrained(model_str, model_max_length = max_length)

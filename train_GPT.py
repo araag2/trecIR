@@ -8,9 +8,12 @@ from tqdm import tqdm
 from torch.optim import AdamW
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2ForSequenceClassification
 
+def create_path(path : str):
+    os.makedirs(path, exist_ok=True)
+    assert os.path.isdir(path), f'No such dir: {path}'
+
 def save_lora_state(model, path : str):
-  os.makedirs(path, exist_ok=True)
-  assert os.path.isdir(path)
+  create_path(path)
 
   torch.save(model.state_dict(), path)
   torch.save(lora.lora_state_dict(model), path)
