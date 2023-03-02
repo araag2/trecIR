@@ -35,20 +35,20 @@ def create_longformer_model(model_str : str , max_length : int, save_path : str)
     direction = 0
 
     while k1 < max_length:
-    if direction == 0: 
-        new_pos_embed[k1] = model.base_model.wpe.weight[k2]
-        k2 += 1
-    else:
-        new_pos_embed[k1] = model.base_model.wpe.weight[k2] + ( weight * model.base_model.wpe.weight[k2-1] )
-        k2 += direction
-    k1 += 1
-    if k2 == 32 and direction != 0: 
-        weight *= 2
-        direction = 1
-    elif k2 == current_max_pos:
-        k2 = current_max_pos - 1
-        weight *= 2
-        direction = -1
+        if direction == 0: 
+            new_pos_embed[k1] = model.base_model.wpe.weight[k2]
+            k2 += 1
+        else:
+            new_pos_embed[k1] = model.base_model.wpe.weight[k2] + ( weight * model.base_model.wpe.weight[k2-1] )
+            k2 += direction
+        k1 += 1
+        if k2 == 32 and direction != 0: 
+            weight *= 2
+            direction = 1
+        elif k2 == current_max_pos:
+            k2 = current_max_pos - 1
+            weight *= 2
+            direction = -1
 
     model.base_model.wpe.weight.data = new_pos_embed
     for layer in tqdm(model.base_model.h):
