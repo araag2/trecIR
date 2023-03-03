@@ -19,7 +19,7 @@ def create_longformer_tokenizer(model_str : str , max_length : int, save_path : 
   tokenizer.save_pretrained(save_path)
 
 def create_longformer_model(model_str : str , max_length : int, save_path : str):
-    model = GPT2ForSequenceClassification.from_pretrained(model_str)
+    model = GPT2LMHeadModel.from_pretrained(model_str)
 
     current_max_pos, embed_size = model.base_model.wpe.weight.shape
 
@@ -60,7 +60,7 @@ def create_longformer_model(model_str : str , max_length : int, save_path : str)
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--tokenizer_save_dir', type=str, default="models/BioMedLM-3072/tokenizer/", help='path to model save dir')
-  parser.add_argument('--model_save_dir', type=str, default="models/BioMedLM-3072/SeqClass/", help='path to model save dir')
+  parser.add_argument('--model_save_dir', type=str, default="models/BioMedLM-3072/LMHead/", help='path to model save dir')
   parser.add_argument('--max_length', type=int, default=3072, help='inteded max sequence size')
   args = parser.parse_args()
 

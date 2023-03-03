@@ -3,6 +3,8 @@ import os
 import json
 import argparse
 import loralib as lora
+import wandb
+import random
 
 from tqdm import tqdm
 from torch.optim import AdamW
@@ -24,49 +26,68 @@ def load_lora_state(model, ckpt_n_path : str, ckpt_lora_path : str):
   return model
 
 if __name__ == "__main__":
-
   parser = argparse.ArgumentParser()
-  parser.add_argument('--tokenizer_load_dir', type=str, default="models/pubmedgpt-3072/tokenizer/", help='path to model save dir')
-  parser.add_argument('--model_load_dir', type=str, default="models/pubmedgpt-3072/LMHead-fine-tuned/", help='path to model save dir')
-  parser.add_argument('--model_save_dir', type=str, default="models/pubmedgpt-3072/LMHead-fine-tuned/", help='path to model save dir')
-  parser.add_argument("--CT_input", default="data_json/SemEval2023/", type=str)
+  parser.add_argument('--model_name', type=str, default="BioMedLM-3072", help='model name')
+  parser.add_argument('--exp_name', type=str, default="base", help='describes the conducted experiment')
+  parser.add_argument('--run', type=int, default=0, help='run number for wandb logging')
+  parser.add_argument('--load_dir', type=str, default="LMHead/", help='path to model load dir')
+  parser.add_argument('--save_dir', type=str, default="LMHead-fine-tuned/", help='path to model save dir')
+  parser.add_argument("--CT_input", default="datasets/TREC2021/TREC2021_CT_corpus.json", type=str, help='path to JSON for MLM')
   parser.add_argument("--queries_input", default="queries/SemEval2023/", type=str)
   parser.add_argument("--qrels_input", default="qrels/SemEval2023/", type=str)
+
+  #Model Hyperparamenters
+  parser.add_argument("--lr", type=float, default=1e-6)
   args = parser.parse_args()
 
   # Working params: python train_pubmedgpt.py
 
-  tokenizer = GPT2Tokenizer.from_pretrained(args.tokenizer_load_dir, max_length=3072)
-  model = GPT2LMHeadModel.from_pretrained(args.model_load_dir, max_length=3072)
+  tokenizer_load_dir = f'models/{args.model_name}/tokenizer/'
+  model_load_dir = f'models/{args.model_name}/{args.load_dir}/'
+  model_save_dir = f'models/{args.model_name}/{args.save_dir}/'
+  create_path(f'models/{args.model_name}/{args.save_dir}/')
+
+  tokenizer = GPT2Tokenizer.from_pretrained(tokenizer_load_dir, max_length=3072)
+  model = GPT2LMHeadModel.from_pretrained(model_load_dir, max_length=3072)
 
   for name, param in model.named_parameters():
     if name.split(".")[-1] != "bias" and name != "transformer.ln_f.weight":
       print(name) 
       param.requires_grad = False
 
-  optimizer = AdamW(model.parameters(), lr=1e-6)
-
   corpus = None
-  with open(f'{os.getcwd()}/{args.CT_input}CT_corpus.json') as JSON_Corpus:
+  with open(args.CT_input) as JSON_Corpus:
     corpus = json.load(JSON_Corpus)
 
+  optimizer = AdamW(model.parameters(), lr=args.lr)
+
+  wandb_config = {'optimizer' : 'AdamW', 'lr' : args.lr}
+
+  wandb.init(
+    project="TREC_LLM-Training",
+    name = f'{args.model_name}/{args.exp_name}/run-{args.run}',
+    group = f'{args.model_name}/{args.exp_name}',
+    config = wandb_config
+  )
+
   i = 0
-  for ct in tqdm(list(corpus)[500:]):
-    print(ct)
-    for cat in tqdm(corpus[ct]):
-      inputs = tokenizer("\n".join(line for line in corpus[ct][cat]), truncation= True, return_tensors="pt")
-      outputs = model(**inputs, labels=inputs["input_ids"])
-      logits = outputs.logits
-      loss = outputs.loss
-      loss.backward()
-      optimizer.step()
-      optimizer.zero_grad()
+  for ct in tqdm(list(corpus)):
+    inputs = tokenizer("\n".join(line for line in corpus[ct]), truncation= True, return_tensors="pt")
+    outputs = model(**inputs, labels=inputs["input_ids"])
+    logits = outputs.logits
+    loss = outputs.loss
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()
+
+    wandb.log({"train/loss": loss})
 
     i += 1
-    if i % 100 == 0:
-      model.save_pretrained(args.model_save_dir)
+    if i % 1000 == 0:
+      create_path(f'model_save_dir/checkpoint-{i}/')
+      torch.save(model.state_dict(), f'model_save_dir/checkpoint-{i}/')
 
-  model.save_pretrained(args.model_save_dir)
+  model.save_pretrained(model_save_dir)
 
   #
   # Train model for document classification, keeping some of the layers fixed

@@ -3,6 +3,7 @@ import os
 import json
 import pandas as pd
 import torch
+import wandb
 from time import gmtime, strftime
 
 from transformers import GPT2ForSequenceClassification, GPT2Tokenizer, GPT2LMHeadModel, GPT2Model
