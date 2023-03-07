@@ -62,24 +62,22 @@ def load_lora_state(model, ckpt_n_path : str, ckpt_lora_path : str):
 
 def generate_local_dataset(corpus):
     with jsonlines.open("datasets/TREC2021/corpus.jsonl",  mode='w') as writer:    
-        writer.write_all([{"doc" : corpus[ct]} for ct in corpus])
+        writer.write_all([{"doc" : corpus[ct]} for ct in tqdm(corpus)])
 
-def build_dataset(corpus_path : str, tokenizer, training_args, max_len):
+def build_dataset(tokenizer, training_args, max_len):
     local_files = {"train" : "datasets/TREC2021/corpus.jsonl"}
 
-    raw_datasets = load_dataset(
+    raw_datasets = load_dataset( #TODO: Load only like 100 files, because corpus is way too big to test.
         "json",
         data_files=local_files,
         use_auth_token=None,
     )
 
-    padding = "max_length"
     text_column_name = "doc"
 
     def tokenize_function(examples):
         return tokenizer(
             examples[text_column_name],
-            padding=padding,
             truncation=True,
             max_length=max_len,
             # We use this option because DataCollatorForLanguageModeling (see below) is more efficient when it
@@ -133,16 +131,16 @@ if __name__ == '__main__':
 
     model = transform_into_LoRA(model, args.lora_r, args.lora_alpha, args.lora_dropout)
 
-    corpus = None
-    with open(args.CT_input) as JSON_Corpus:
-        corpus = json.load(JSON_Corpus)
-    generate_local_dataset(corpus)
+    #corpus = None
+    #with open(args.CT_input) as JSON_Corpus:
+    #    corpus = json.load(JSON_Corpus)
+    #generate_local_dataset(corpus)
 
-    wandb.init(
-      project="TREC_LLM-Training",
-      name = f'{args.model_name}/{args.exp_name}/run-{args.run}',
-      group = f'{args.model_name}/{args.exp_name}'
-    )
+    #wandb.init(
+    #  project="TREC_LLM-Training",
+    #  name = f'{args.model_name}/{args.exp_name}/run-{args.run}',
+    #  group = f'{args.model_name}/{args.exp_name}'
+    #)
 
     #model = bias_only_grad(model)
 
@@ -154,11 +152,12 @@ if __name__ == '__main__':
         group_by_length=True,
         save_steps=1000,
         save_total_limit=4,
+        logging_steps=1,
         learning_rate=args.lr,
     )
 
     # Load Data
-    train_dataset, data_collator = build_dataset(args.queries_input, args.qrels_input, tokenizer, training_args, args.max_length)
+    train_dataset, data_collator = build_dataset(tokenizer, training_args, args.max_length)
 
     trainer = Trainer(
         model=model,  # the instantiated 🤗 Transformers model to be trained
