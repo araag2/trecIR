@@ -62,12 +62,12 @@ def load_lora_state(model, ckpt_n_path : str, ckpt_lora_path : str):
 
 def generate_local_dataset(corpus):
     with jsonlines.open("datasets/TREC2021/corpus.jsonl",  mode='w') as writer:    
-        writer.write_all([{"doc" : corpus[ct]} for ct in tqdm(corpus)])
+        writer.write_all([{"doc" : corpus[ct]} for ct in tqdm(list(corpus)[:100])])
 
 def build_dataset(tokenizer, training_args, max_len):
     local_files = {"train" : "datasets/TREC2021/corpus.jsonl"}
 
-    raw_datasets = load_dataset( #TODO: Load only like 100 files, because corpus is way too big to test.
+    raw_datasets = load_dataset( #TODO: It's only loading 100 files to test
         "json",
         data_files=local_files,
         use_auth_token=None,
@@ -95,7 +95,7 @@ def build_dataset(tokenizer, training_args, max_len):
             desc="Running tokenizer on dataset with labels yes and no",
         )
 
-    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True)
+    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
     return tokenized_datasets["train"], data_collator
 
