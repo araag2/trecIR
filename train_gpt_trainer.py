@@ -129,6 +129,7 @@ if __name__ == '__main__':
     tokenizer = GPT2Tokenizer.from_pretrained(tokenizer_load_dir, max_length=args.max_length)
     model = GPT2LMHeadModel.from_pretrained(model_load_dir, max_length=args.max_length)
 
+    #model = bias_only_grad(model)
     model = transform_into_LoRA(model, args.lora_r, args.lora_alpha, args.lora_dropout)
 
     #corpus = None
@@ -136,13 +137,11 @@ if __name__ == '__main__':
     #    corpus = json.load(JSON_Corpus)
     #generate_local_dataset(corpus)
 
-    #wandb.init(
-    #  project="TREC_LLM-Training",
-    #  name = f'{args.model_name}/{args.exp_name}/run-{args.run}',
-    #  group = f'{args.model_name}/{args.exp_name}'
-    #)
-
-    #model = bias_only_grad(model)
+    wandb.init(
+      project="TREC_LLM-Training",
+      name = f'{args.model_name}/{args.exp_name}/run-{args.run}',
+      group = f'{args.model_name}/{args.exp_name}'
+    )
 
     training_args = TrainingArguments(
         output_dir=args.save_dir,  # output directory
