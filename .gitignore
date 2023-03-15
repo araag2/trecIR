@@ -155,7 +155,7 @@ cython_debug/
 
 # Big Datasets
 *.zip
-datasets/
+TREC2021/
 data_json/
 models/
 wandb
