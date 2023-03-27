@@ -1,51 +1,72 @@
 import json
+import argparse
+import os
+
+from typing import Dict
 from pyserini.search.lucene import LuceneSearcher
 from ranx import Qrels, Run, evaluate
 
-K = 1000
+def get_index_paths(base_dir : str) -> Dict:
+    indexes = {}
+    for term in os.listdir(base_dir):
+        if term == 'freetxt':
+            indexes['all'] = f'{base_dir}{term}/'
+        else:
+            indexes[term] = f'{base_dir}{term}/'
+    return indexes
 
-indexes = ["/home/bd.cardoso/pyserini/indexes/trec_ct_2021/all_free_text_fields",
-           "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/brief_summary",
-           "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/brief_title",
-           "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/detailed_description",
-           "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/eligibility_criteria",
-           "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/eligibility_study_pop",
-           "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/official_title"]
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', required=True)
+    args = parser.parse_args()
 
-with open("/home/bd.cardoso/my_datasets/trec_ct_2021/topics/topics.json", "r") as r:
-    topics = json.load(r)
+    print(get_index_paths(args.index_dir))
+    quit()
 
-with open("/home/bd.cardoso/my_datasets/trec_ct_2021/qrels/qrels_3_scale.json", "r") as r:
-    qrels_3_scale = json.load(r)
+    K = 1000
 
-with open("/home/bd.cardoso/my_datasets/trec_ct_2021/qrels/qrels_2_scale_v1.json", "r") as r:
-    qrels_2_scale_v1 = json.load(r)
+    indexes = ["/home/bd.cardoso/pyserini/indexes/trec_ct_2021/all_free_text_fields",
+            "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/brief_summary",
+            "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/brief_title",
+            "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/detailed_description",
+            "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/eligibility_criteria",
+            "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/eligibility_study_pop",
+            "/home/bd.cardoso/pyserini/indexes/trec_ct_2021/official_title"]
 
-for index in indexes:
+    with open("/home/bd.cardoso/my_datasets/trec_ct_2021/topics/topics.json", "r") as r:
+        topics = json.load(r)
 
-    run_dict = {}
-    searcher = LuceneSearcher(index)
-    searcher.set_bm25()
+    with open("/home/bd.cardoso/my_datasets/trec_ct_2021/qrels/qrels_3_scale.json", "r") as r:
+        qrels_3_scale = json.load(r)
 
-    # Retrieve
-    for topic_id in topics:
-        if topic_id not in run_dict:
-            run_dict[topic_id] = {}
+    with open("/home/bd.cardoso/my_datasets/trec_ct_2021/qrels/qrels_2_scale_v1.json", "r") as r:
+        qrels_2_scale_v1 = json.load(r)
 
-        hits = searcher.search(topics[topic_id], k=K)
-        for hit in hits:
-            run_dict[topic_id][hit.docid] = hit.score
+    for index in indexes:
 
-    run = Run(run_dict, name=f"BM25_{index.split('/')[-1]}")
-    run.save(f"/home/bd.cardoso/rework/Retrieval/runs/{run.name}.json")
+        run_dict = {}
+        searcher = LuceneSearcher(index)
+        searcher.set_bm25()
 
-    # Evaluate
-    ndcg = evaluate(Qrels(qrels_3_scale), run, "ndcg@10")
-    results = evaluate(Qrels(qrels_2_scale_v1), run,
-                       ["precision@10", "r-precision", "mrr", "recall@10", "recall@100", "recall@500", "recall@1000",
-                        "recall"])
-    results.update({"ndcg@10": ndcg})
-    for metric in results:
-        results[metric] = round(results[metric], 4)
-    with open(f"/home/bd.cardoso/rework/Retrieval/runs/{run.name}_metrics.json", "w") as w:
-        json.dump(results, w, indent=4)
+        # Retrieve
+        for topic_id in topics:
+            if topic_id not in run_dict:
+                run_dict[topic_id] = {}
+
+            hits = searcher.search(topics[topic_id], k=K)
+            for hit in hits:
+                run_dict[topic_id][hit.docid] = hit.score
+
+        run = Run(run_dict, name=f"BM25_{index.split('/')[-1]}")
+        run.save(f"/home/bd.cardoso/rework/Retrieval/runs/{run.name}.json")
+
+        # Evaluate
+        ndcg = evaluate(Qrels(qrels_3_scale), run, "ndcg@10")
+        results = evaluate(Qrels(qrels_2_scale_v1), run,
+                        ["precision@10", "r-precision", "mrr", "recall@10", "recall@100", "recall@500", "recall@1000",
+                            "recall"])
+        results.update({"ndcg@10": ndcg})
+        for metric in results:
+            results[metric] = round(results[metric], 4)
+        with open(f"/home/bd.cardoso/rework/Retrieval/runs/{run.name}_metrics.json", "w") as w:
+            json.dump(results, w, indent=4)
