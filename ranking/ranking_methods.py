@@ -1,14 +1,26 @@
 import json
 import argparse
 import os
+import pandas as pd
 
 from utils_IO import safe_open_w
 
+from tabulate import tabulate
 from tqdm import tqdm
 from typing import Dict
 from pyserini.search.lucene import LuceneSearcher
+from pyserini.trectools import TrecRun
+from pyserini.fusion import reciprocal_rank_fusion
 from ranx import Qrels, Run, evaluate
 
+def display_results(results: Dict) -> None:
+    """
+    Displays results of evaluation
+
+    Args:
+        results (Dict): dictionary with results of evaluation
+    """
+    print(tabulate(results, headers="keys", tablefmt="github"))
 
 def get_index_paths(base_dir : str) -> Dict:
     indexes = {}
@@ -32,8 +44,8 @@ if __name__ == '__main__':
     parser.add_argument('--metrics_similiar', nargs='+', type=str, help='list of metrics to calculate from 0 1 2 labels', default=["ndcg@10"])
     parser.add_argument('--K', type=int, help='retrieve top K documents', default=1000)
 
-    parser.add_argument('--rm3', type=str, help='enable or disable rm3', choices=['y', 'n'], default='n')
-    parser.add_argument('--rrf', type=str, help='enable or disable rrf', choices=['y', 'n'], default='n')
+    parser.add_argument('--rm3', type=str, help='enable or disable rm3', choices=['y', 'n'], default='y')
+    parser.add_argument('--rrf', type=str, help='enable or disable rrf', choices=['y', 'n'], default='y')
     
     parser.add_argument('--run', type=int, help='run number', default=1)
 
@@ -49,30 +61,54 @@ if __name__ == '__main__':
     metrics_bin = args.metrics_bin
     metrics_similiar = args.metrics_similiar
 
-    for index_name in tqdm(index_paths):
+    run_name = f'{args.output_dir}run-{args.run}-BM25'
+    run_name += '-RM3' if args.rm3 == 'y' else ''
+    run_name += '-RRF' if args.rrf == 'y' else ''
 
-        run_dict = {}
+    for index_name in tqdm(index_paths):
+        index_output_name = f'{run_name}/res-{index_name}'
+
         searcher = LuceneSearcher(index_paths[index_name])
         searcher.set_bm25()
 
         if args.rm3 == 'y':
             searcher.set_rm3()
 
+        run_result = None
+        run = None
+
         # Retrieve
-        for query_id in tqdm(queries):
-            if query_id not in run_dict:
-                run_dict[query_id] = {}
+        if args.rrf == 'y':
+            run_result = []
 
-            hits = searcher.search(queries[query_id], k=args.K)
-            for hit in hits:
-                run_dict[query_id][hit.docid] = hit.score
+            for query_id in tqdm(queries):
+                hits = searcher.search(queries[query_id], k=args.K)
+                query_results = []
+                for rank, hit in enumerate(hits, start=1):
+                    query_results.append([query_id, 'Q0', hit.docid, rank, hit.score, f'{query_id}-{rank}'])
+                run_result.append(TrecRun.from_list(query_results))
+            
+            run = reciprocal_rank_fusion(run_result, depth=args.K, k=args.K)
+            run = pd.DataFrame(data=run.to_numpy(), columns=['q_id', '_1', 'doc_id', '_2', 'score', '_3'])
+            run = run.astype({'score': 'float'})
+            run = Run.from_df(run)
 
-        run = Run(run_dict, name=f"BM25_{index_name}")
-        run_name = f'{args.output_dir}run-{args.run}/res_{run.name}'
+        elif args.rrf == 'n':
+            run_result = {}
+
+            for query_id in tqdm(queries):
+                if query_id not in run_result:
+                    run_result[query_id] = {}
+
+                hits = searcher.search(queries[query_id], k=args.K)
+                for hit in hits:
+                    run_result[query_id][hit.docid] = hit.score
+
+            run = Run(run_result)
 
         if args.save_hits == 'y':
-            safe_open_w(f'{run_name}-hits.json')
-            run.save(f'{run_name}-hits.json')
+            safe_open_w(f'{index_output_name}-hits.json')
+            run.save(f'{index_output_name}-hits.json')
 
         # Evaluate
         results = {}
@@ -84,5 +120,5 @@ if __name__ == '__main__':
         for metric in results:
             results[metric] = round(results[metric], 4)
 
-        with safe_open_w(f'{run_name}-metrics.json') as output_f:
+        with safe_open_w(f'{index_output_name}-metrics.json') as output_f:
             json.dump(results, output_f, indent=4)
