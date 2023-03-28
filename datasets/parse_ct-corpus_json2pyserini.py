@@ -1,13 +1,9 @@
 import os
 import json
 import argparse
-from tqdm import tqdm
 
-def safe_open_w(path: str):
-    ''' Open "path" for writing, creating any parent directories as needed.
-    '''
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    return open(path, 'w', encoding='utf8')
+from utils.utils_IO import safe_open_w
+from tqdm import tqdm
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
