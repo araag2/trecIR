@@ -2,7 +2,7 @@ import json
 import argparse
 import os
 
-import utils_IO
+from utils_IO import safe_open_w
 
 from typing import Dict
 from pyserini.search.lucene import LuceneSearcher
@@ -20,11 +20,11 @@ def get_index_paths(base_dir : str) -> Dict:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', required=True)
-    parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/queries2021.json")
+    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/TREC2021/pyserini_indexes/")
+    parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2021/queries2021.json")
 
-    parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/qrels2021/qrels2022_binary.json")
-    parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/qrels2021/qrels2022_similiar.json")
+    parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/TREC2021/qrels2021/qrels2022_binary.json")
+    parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/TREC2021/qrels2021/qrels2022_similiar.json")
 
     parser.add_argument('--metrics_bin', nargs='+', type=str, help='list of metrics to calculate from binary labels', default=["precision@10", "r-precision", "mrr", \
     "recall@10", "recall@100", "recall@500", "recall@1000", "recall"])
@@ -32,10 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--K', type=int, help='retrieve top K documents', default=1000)
 
     parser.add_argument('--run', type=int, help='run number', default=1)
-    parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/ranking/")
+    parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2021/ranking/")
     args = parser.parse_args()
-
-    quit()
 
     index_paths = get_index_paths(args.index_dir)
 

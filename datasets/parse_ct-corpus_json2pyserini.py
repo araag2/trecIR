@@ -2,22 +2,8 @@ import os
 import json
 import argparse
 
-from typing import TextIO
+from utils_IO import safe_open_w
 from tqdm import tqdm
-
-def safe_open_w(path: str) -> TextIO:
-    """
-    Open "path" for writing, creating any parent directories as needed.
-
-    Args
-        path: path to file, in string format
-
-    Return
-        file: TextIO object
-    """
-
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    return open(path, 'w', encoding='utf8')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
