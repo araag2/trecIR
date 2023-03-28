@@ -4,6 +4,7 @@ import os
 
 from utils_IO import safe_open_w
 
+from tqdm import tqdm
 from typing import Dict
 from pyserini.search.lucene import LuceneSearcher
 from ranx import Qrels, Run, evaluate
@@ -23,8 +24,8 @@ if __name__ == '__main__':
     parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/TREC2021/pyserini_indexes/")
     parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2021/queries2021.json")
 
-    parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/TREC2021/qrels2021/qrels2022_binary.json")
-    parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/TREC2021/qrels2021/qrels2022_similiar.json")
+    parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/TREC2021/qrels2021/qrels2021_binary.json")
+    parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/TREC2021/qrels2021/qrels2021_similiar.json")
 
     parser.add_argument('--metrics_bin', nargs='+', type=str, help='list of metrics to calculate from binary labels', default=["precision@10", "r-precision", "mrr", \
     "recall@10", "recall@100", "recall@500", "recall@1000", "recall"])
@@ -43,14 +44,14 @@ if __name__ == '__main__':
     metrics_bin = args.metrics_bin
     metrics_similiar = args.metrics_similiar
 
-    for index_name in index_paths:
+    for index_name in tqdm(index_paths):
 
         run_dict = {}
         searcher = LuceneSearcher(index_paths[index_name])
         searcher.set_bm25()
 
         # Retrieve
-        for query_id in queries:
+        for query_id in tqdm(queries):
             if query_id not in run_dict:
                 run_dict[query_id] = {}
 
@@ -59,17 +60,20 @@ if __name__ == '__main__':
                 run_dict[query_id][hit.docid] = hit.score
 
         run = Run(run_dict, name=f"BM25_{index_name}")
-        run.save(f'{args.output_dir}run-{args.run}/res_mbm25.json')
+        run_name = f'{args.output_dir}run-{args.run}/res_{run.name}'
+
+        safe_open_w(f'{run_name}-hits.json')
+        run.save(f'{run_name}-hits.json')
 
         # Evaluate
         results = {}
         if metrics_bin:
             results = evaluate(Qrels(qrels_bin), run, metrics_bin)
         if metrics_similiar:
-            results.update(evaluate(Qrels(qrels_similiar), run, metrics_similiar))
+            results.update({"ndcg": evaluate(Qrels(qrels_similiar), run, metrics_similiar)})
 
         for metric in results:
             results[metric] = round(results[metric], 4)
 
-        with safe_open_w(f'{args.output_dir}run-{args.run}/res_metrics.json') as output_f:
+        with safe_open_w(f'{run_name}-metrics.json') as output_f:
             json.dump(results, output_f, indent=4)
