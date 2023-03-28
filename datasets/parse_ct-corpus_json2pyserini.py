@@ -26,25 +26,27 @@ if __name__ == '__main__':
     
         for ct in tqdm(struct_data):
             for field in struct_data[ct]:
-                if field == 'id' or field == 'condition':
-                    continue
-    
+                if field not in res_by_field:
+                    res_by_field[field] = []
+
                 elif field == 'eligibility': 
                     for subfield in struct_data[ct]['eligibility']:
-                        if subfield == 'study_pop' or subfield == 'criteria':
-                            res_by_field[subfield].append({'id' : ct, 'contents' : struct_data[ct]['eligibility'][subfield]})
+                        if subfield not in res_by_field:
+                            res_by_field[subfield] = []
+                        res_by_field[subfield].append({'id' : ct, 'contents' : struct_data[ct]['eligibility'][subfield]})
 
                 else:
                     res_by_field[field].append({'id' : ct, 'contents' : struct_data[ct][field]})
 
-            # Append free txt concatenated in order of importance
-            ct_free_txt = ""
-            for field in args.fields:
-                if field != 'free_txt' and res_by_field[field] != [] and res_by_field[field][-1]['id'] == ct and res_by_field[field][-1]['contents'] != None:
-                    ct_free_txt += " " + res_by_field[field][-1]['contents'] 
+            if 'free_txt' in args.fields:
+                # Append free txt concatenated in order of importance
+                ct_free_txt = ""
+                for field in args.fields:
+                    if field != 'free_txt' and res_by_field[field] != [] and res_by_field[field][-1]['id'] == ct and res_by_field[field][-1]['contents'] != None:
+                        ct_free_txt += " " + res_by_field[field][-1]['contents'] 
 
-            res_by_field["free_txt"].append({'id' : ct, 'contents' : ct_free_txt})                
+                res_by_field["free_txt"].append({'id' : ct, 'contents' : ct_free_txt})                
     
-        for field in tqdm(res_by_field):
+        for field in tqdm(args.fields):
             with safe_open_w(f'{args.output}/{field}/index_{field}.json') as output_file_json:
                 json.dump(res_by_field[field], output_file_json, indent=4)

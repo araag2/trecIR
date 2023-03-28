@@ -32,7 +32,12 @@ if __name__ == '__main__':
     parser.add_argument('--metrics_similiar', nargs='+', type=str, help='list of metrics to calculate from 0 1 2 labels', default=["ndcg@10"])
     parser.add_argument('--K', type=int, help='retrieve top K documents', default=1000)
 
+    parser.add_argument('--rm3', type=str, help='enable or disable rm3', choices=['y', 'n'], default='n')
+    parser.add_argument('--rrf', type=str, help='enable or disable rrf', choices=['y', 'n'], default='n')
+    
     parser.add_argument('--run', type=int, help='run number', default=1)
+
+    parser.add_argument('--save_hits', type=str, help='save hit dictionaries', choices=['y', 'n'], default='n')
     parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2021/ranking/")
     args = parser.parse_args()
 
@@ -50,6 +55,9 @@ if __name__ == '__main__':
         searcher = LuceneSearcher(index_paths[index_name])
         searcher.set_bm25()
 
+        if args.rm3 == 'y':
+            searcher.set_rm3()
+
         # Retrieve
         for query_id in tqdm(queries):
             if query_id not in run_dict:
@@ -62,8 +70,9 @@ if __name__ == '__main__':
         run = Run(run_dict, name=f"BM25_{index_name}")
         run_name = f'{args.output_dir}run-{args.run}/res_{run.name}'
 
-        safe_open_w(f'{run_name}-hits.json')
-        run.save(f'{run_name}-hits.json')
+        if args.save_hits == 'y':
+            safe_open_w(f'{run_name}-hits.json')
+            run.save(f'{run_name}-hits.json')
 
         # Evaluate
         results = {}
