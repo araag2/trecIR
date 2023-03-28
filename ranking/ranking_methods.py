@@ -2,7 +2,7 @@ import json
 import argparse
 import os
 
-from utils.utils_IO import safe_open_w
+import utils_IO
 
 from typing import Dict
 from pyserini.search.lucene import LuceneSearcher
@@ -34,6 +34,8 @@ if __name__ == '__main__':
     parser.add_argument('--run', type=int, help='run number', default=1)
     parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/ranking/")
     args = parser.parse_args()
+
+    quit()
 
     index_paths = get_index_paths(args.index_dir)
 
