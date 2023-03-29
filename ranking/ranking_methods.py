@@ -25,16 +25,14 @@ def display_results(results: Dict) -> None:
 def get_index_paths(base_dir : str) -> Dict:
     indexes = {}
     for term in os.listdir(base_dir):
-        if term == 'freetxt':
-            indexes['all'] = f'{base_dir}{term}/'
-        else:
-            indexes[term] = f'{base_dir}{term}/'
+        indexes[term] = f'{base_dir}{term}/'
     return indexes
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/TREC2021/pyserini_indexes/")
     parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2021/queries2021.json")
+    parser.add_argument('--queries_expanded', type=str, help='path to queries file used for RRF', default="../queries/TREC2021/queries2021-expanded.json")
 
     parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/TREC2021/qrels2021/qrels2021_binary.json")
     parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/TREC2021/qrels2021/qrels2021_similiar.json")
@@ -55,7 +53,7 @@ if __name__ == '__main__':
 
     index_paths = get_index_paths(args.index_dir)
 
-    queries = json.load(open(args.queries))
+    queries = json.load(open(args.queries)) if args.rm3 == 'n' else json.load(open(args.queries_expanded))
     qrels_bin = json.load(open(args.qrels_bin))
     qrels_similiar = json.load(open(args.qrels_similiar))
     metrics_bin = args.metrics_bin
@@ -82,12 +80,13 @@ if __name__ == '__main__':
             run_result = []
 
             for query_id in tqdm(queries):
-                hits = searcher.search(queries[query_id], k=args.K)
-                query_results = []
-                for rank, hit in enumerate(hits, start=1):
-                    query_results.append([query_id, 'Q0', hit.docid, rank, hit.score, f'{query_id}-{rank}'])
-                run_result.append(TrecRun.from_list(query_results))
-            
+                for sintetic_query_id in queries[query_id]:
+                    hits = searcher.search(queries[query_id][sintetic_query_id], k=args.K)
+                    sintetic_query_results = []
+                    for rank, hit in enumerate(hits, start=1):
+                        sintetic_query_results.append((query_id, 'Q0', hit.docid, rank, hit.score, f'{query_id}_{sintetic_query_id}'))
+                    run_result.append(TrecRun.from_list(sintetic_query_results))
+
             run = reciprocal_rank_fusion(run_result, depth=args.K, k=args.K)
             run = pd.DataFrame(data=run.to_numpy(), columns=['q_id', '_1', 'doc_id', '_2', 'score', '_3'])
             run = run.astype({'score': 'float'})

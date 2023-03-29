@@ -11,7 +11,7 @@ from tqdm import tqdm
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--queries', type=str, help='path to base queries file', default="../queries/TREC2021/queries2021.json")
-    parser.add_argument('--model_name', type=str, help='name of T5 model used to expand topic queries', default="google/t5-v1_1-large")
+    parser.add_argument('--model_name', type=str, help='name of T5 model used to expand topic queries', default="castorini/doc2query-t5-large-msmarco")
     args = parser.parse_args()
 
     output_dir = f'{args.queries[:-5]}-expanded'
@@ -33,10 +33,11 @@ if __name__ == '__main__':
         input_ids = tokenizer.encode(queries[query_id], return_tensors='pt').to(device)
         outputs = model.generate(
             input_ids=input_ids,
-            max_new_tokens=100,
+            max_length=64,
+            #max_new_tokens=100,
             do_sample=True,
             top_k=10,
-            num_return_sequences=100
+            num_return_sequences=40
         )
 
         for i in range(len(outputs)):

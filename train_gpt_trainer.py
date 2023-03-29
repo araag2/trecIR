@@ -62,12 +62,12 @@ def load_lora_state(model, ckpt_n_path : str, ckpt_lora_path : str):
 
 def generate_local_dataset(corpus):
     with jsonlines.open("datasets/TREC2021/corpus.jsonl",  mode='w') as writer:    
-        writer.write_all([{"doc" : corpus[ct]} for ct in tqdm(list(corpus)[:100])])
+        writer.write_all([{"doc" : corpus[ct]} for ct in tqdm(list(corpus)[:1000])])
 
 def build_dataset(tokenizer, training_args, max_len):
     local_files = {"train" : "datasets/TREC2021/corpus.jsonl"}
 
-    raw_datasets = load_dataset( #TODO: It's only loading 100 files to test
+    raw_datasets = load_dataset( #TODO: It's only loading 1000 files to test
         "json",
         data_files=local_files,
         use_auth_token=None,
@@ -114,11 +114,16 @@ if __name__ == '__main__':
     #Model Hyperparamenters
     parser.add_argument("--batch_size", default=16, type=int)
     parser.add_argument("--pooling", default="mean")
-    parser.add_argument("--epochs", default=1, type=int)
+    parser.add_argument("--epochs", default=4, type=int)
     parser.add_argument("--lr", type=float, default=1e-6)
     parser.add_argument("--lora_r", type=int, default=16)
     parser.add_argument("--lora_dropout", type=float, default=0.1)
     parser.add_argument("--lora_alpha", type=float, default=0.1)
+
+    #Speed and memory optimization parameters
+    parser.add_argument("--fp16", action="store_true", help="Whether to use 16-bit (mixed) precision instead of 32-bit")
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=4, help="Number of updates steps to accumulate before performing a backward/update pass.")
+    parser.add_argument("--gradient_checkpointing", action="store_true", help="If True, use gradient checkpointing to save memory at the expense of slower backward pass.")
     args = parser.parse_args()
 
     tokenizer_load_dir = f'models/{args.model_name}/tokenizer/'
@@ -132,10 +137,10 @@ if __name__ == '__main__':
     #model = bias_only_grad(model)
     model = transform_into_LoRA(model, args.lora_r, args.lora_alpha, args.lora_dropout)
 
-    #corpus = None
-    #with open(args.CT_input) as JSON_Corpus:
-    #    corpus = json.load(JSON_Corpus)
-    #generate_local_dataset(corpus)
+    corpus = None
+    with open(args.CT_input) as JSON_Corpus:
+        corpus = json.load(JSON_Corpus)
+    generate_local_dataset(corpus)
 
     wandb.init(
       project="TREC_LLM-Training",
@@ -146,13 +151,21 @@ if __name__ == '__main__':
     training_args = TrainingArguments(
         output_dir=args.save_dir,  # output directory
         overwrite_output_dir=True,  # overwrite the content of the output directory
-        num_train_epochs=args.epochs,  # total number of training epochs
-        per_device_train_batch_size=args.batch_size,  # batch size per device during training
         group_by_length=True,
+
+        #Evaluation parameters
         save_steps=1000,
         save_total_limit=4,
-        logging_steps=1,
+        logging_steps=500,
+        #Hyperparameter optimization parameters
+        per_device_train_batch_size=args.batch_size,
+        dataloader_drop_last=True,
         learning_rate=args.lr,
+        num_train_epochs=args.epochs, 
+        #Speed and memory optimization parameters
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
+        gradient_checkpointing=args.gradient_checkpointing,
+        fp16=args.fp16
     )
 
     # Load Data
