@@ -1,8 +1,8 @@
 import json
 import argparse
 import os
-import pandas as pd
 import pickle
+import torch
 
 from utils_IO import safe_open_w
 
@@ -24,22 +24,35 @@ def get_index_paths(base_dir : str) -> Dict:
     return indexes
 
 def encode_corpus(model : SentenceTransformer, corpus_path : str, save_path : str) -> Dict:
+    """
+    Encodes corpus using SentenceTransformer model
+
+    Args:
+        model (SentenceTransformer): model used to encode corpus
+        corpus_path (str): path to corpus file
+        save_path (str): path to save encoded corpus to memory
+    """
     corpus_raw = json.load(open(corpus_path))
-
-    for doc in tqdm(corpus_raw):
-        print(corpus_raw[doc])
-        quit()
-
-    corpus_processed = model.encode("")
+    txt_encoded = model.encode([corpus_raw[doc_id] for doc_id in corpus_raw], show_progress_bar=True)
+    
+    corpus_processed = {}
+    for doc_id, enc_txt in zip(corpus_raw, txt_encoded):
+        corpus_processed[doc_id] = enc_txt
 
     if save_path != "":
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        with safe_open_w(f'{save_path}.pkl', 'wb') as f_out:
+        with open(f'{save_path}.pkl', 'wb') as f_out:
             pickle.dump(corpus_processed, f_out, protocol = pickle.HIGHEST_PROTOCOL)
 
     return corpus_processed
 
 def load_corpus_from_memory(corpus_memory_path : str) -> Dict:
+    """
+    Loads corpus from memory using pickle
+
+    Args:
+        corpus_memory_path (str): path to corpus memory file
+    """
     return pickle.load(open(corpus_memory_path, 'rb'))
 
 def main():
@@ -53,7 +66,7 @@ def main():
 
     # Wether to load corpus from memory, and path from where to load it
     parser.add_argument('--corpus_load', type=str, help='load corpus from memory', choices=['y', 'n'], default='n')
-    parser.add_argument('--corpus_load_path', type=str, help='path to corpus memory file', default="")
+    parser.add_argument('--corpus_load_path', type=str, help='path to corpus memory file', default="../datasets/TREC2021/encoded_corpus/corpus-msmarco-distilbert-base-v4.pkl")
 
     # Path to queries and qrels files
     parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2021/queries2021.json")
@@ -66,6 +79,9 @@ def main():
     "recall@10", "recall@100", "recall@500", "recall@1000", "recall"])
     parser.add_argument('--metrics_similiar', nargs='+', type=str, help='list of metrics to calculate from 0 1 2 labels', default=["ndcg@10"])
 
+    # Top k documents to retrieve
+    parser.add_argument('--top_k', type=int, help='retrieve top K documents', default=1000)
+
     # How many docs to retrieve for each query
     parser.add_argument('--run', type=int, help='run number', default=1)
 
@@ -74,7 +90,7 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2021/ranking/")
     args = parser.parse_args()
 
-    model = SentenceTransformer(args.model_name)
+    model = SentenceTransformer(args.model_name, device = 'cuda' if torch.cuda.is_available() else 'cpu')
     corpus = load_corpus_from_memory(args.corpus_load_path) if args.corpus_load == 'y' else encode_corpus(model, args.corpus_path, f'{args.corpus_save_path}-{args.model_name}')
 
     queries = json.load(open(args.queries))
@@ -87,7 +103,15 @@ def main():
 
     run_name = f'{args.output_dir}run-{args.run}-bi-encoder-{args.model_name}'
 
-    # TODO: Implement ranking
+    query_ids = list(queries.keys())
+    encoded_queries = model.encode([queries[query_id] for query_id in queries], show_progress_bar=True).to('cuda')
+
+    corpus_ids = list(corpus.keys())
+    corpus = torch.Tensor([corpus[doc_id] for doc_id in corpus]).to('cuda')
+
+    hits = util.semantic_search(encoded_queries, corpus, top_k=args.top_k)
+
+    #TODO: Convert hits to run format in order to evaluate
 
     # Evaluate
     results = {}
