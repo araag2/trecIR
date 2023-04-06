@@ -116,11 +116,11 @@ def main():
     run_name = f'{args.output_dir}run-{args.run}-bi-encoder-{args.model_name}'
 
     query_ids = list(queries.keys())
-    encoded_queries = model.encode([queries[query_id] for query_id in queries], show_progress_bar=True)
+    encoded_queries = model.encode([queries[query_id] for query_id in queries])
 
     corpus_ids = list(corpus.keys())
     corpus = np.array([corpus[doc_id] for doc_id in corpus])
-
+    
     hits = util.semantic_search(encoded_queries, corpus, top_k=args.top_k)
     
     run = {}
