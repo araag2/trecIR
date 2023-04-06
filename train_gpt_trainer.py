@@ -5,8 +5,9 @@ import pandas as pd
 import torch
 import jsonlines
 import argparse
-import loralib as lora
 
+import loralib as lora
+from peft import get_peft_model, LoraConfig, TaskType 
 from subprocess import call
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
@@ -16,173 +17,198 @@ from typing import List, Type, Optional
 from tqdm import tqdm
 from datasets import load_dataset
 
-def create_path(path : str):
+def create_path(path : str) -> None:
+    """
+    Creates a path if it does not exist and asserts that it is a directory.
+
+    Args:
+        path (str): path to create
+    """
     os.makedirs(path, exist_ok=True)
     assert os.path.isdir(path), f'No such dir: {path}'
 
-def bias_only_grad(model):
-  print(model)
+
+def bias_only_grad(model: torch.nn.Module) -> torch.nn.Module:
+  """
+  Sets all parameters to not require gradients except for bias parameters, implementing Bias-Only training.
+
+  Args:
+      model (torch.nn.Module): model to set parameters for
+  """
   for name, param in model.named_parameters():
     if name.split(".")[-1] != "bias":
-      print(name) 
       param.requires_grad = False
   return model
 
-def transform_into_LoRA(model, r : int, alpha : float, dropout : float):
-  out_features = 2560 #adapt according to model
-  for module in model.transformer.h:
-    if module.attn != None:
-      lora_c_attn = lora.MergedLinear(
-        out_features, out_features * 3, 
-        r=r, 
-        lora_alpha=alpha, 
-        lora_dropout=dropout, 
-        enable_lora=[True, False, True], 
-        fan_in_fan_out=True,
-        merge_weights=False)
-      lora_c_attn.weight.data = module.attn.c_attn.weight.data
-      lora_c_attn.bias.data = module.attn.c_attn.bias.data
-      module.attn.c_attn = lora_c_attn
-      
-  lora.mark_only_lora_as_trainable(model, bias='lora_only')
-  #lora.mark_only_lora_as_trainable(model, bias='all')
-  return model 
+def transform_into_LoRA(model : torch.nn.Module, r : int, alpha : float, dropout : float) -> torch.nn.Module:
+  """
+  Transforms a model into a LoRA model, using the PEFT library.
 
-def save_lora_state(model, path : str):
+  Args:
+      model (torch.nn.Module): model to transform
+      r (int): r parameter for LoRA
+      alpha (float): alpha parameter for LoRA
+      dropout (float): dropout parameter for LoRA
+  """
+  peft_config = LoraConfig(
+    task_type=TaskType.SEQ_2_SEQ_LM, inference_mode=False, r=r, lora_alpha=alpha, lora_dropout=dropout)
+  model = get_peft_model(model, peft_config)
+  model.print_trainable_parameters()
+  return model
+
+def save_lora_state(model : torch.nn.Module, path : str) -> None:
+  """
+  Saves the state of a LoRA model.
+
+  Args:
+      model (torch.nn.Module): model to save state of
+      path (str): path to save state to
+  """
   create_path(path)
 
   torch.save(model.state_dict(), path)
   torch.save(lora.lora_state_dict(model), path)
 
-def load_lora_state(model, ckpt_n_path : str, ckpt_lora_path : str):
+def load_lora_state(model : torch.nn.Module, ckpt_n_path : str, ckpt_lora_path : str) -> torch.nn.Module:
+  """
+  Loads the state of a LoRA model.
+
+  Args:
+      model (torch.nn.Module): model to load state of
+      ckpt_n_path (str): path to load non-LoRA state from
+  """
   model.load_state_dict(torch.load(ckpt_n_path), strict=False)
   model.load_state_dict(torch.load(ckpt_lora_path), strict=False)
   return model
 
 
 def generate_local_dataset(corpus):
-    with jsonlines.open("datasets/TREC2021/corpus.jsonl",  mode='w') as writer:    
-        writer.write_all([{"doc" : corpus[ct]} for ct in tqdm(list(corpus)[:1000])])
+  with jsonlines.open("datasets/TREC2021/corpus.jsonl",  mode='w') as writer:    
+    writer.write_all([{"doc" : corpus[ct]} for ct in tqdm(list(corpus)[:1000])])
 
 def build_dataset(tokenizer, training_args, max_len):
-    local_files = {"train" : "datasets/TREC2021/corpus.jsonl"}
+  local_files = {"train" : "datasets/TREC2021/corpus.jsonl"}
 
-    raw_datasets = load_dataset( #TODO: It's only loading 1000 files to test
-        "json",
-        data_files=local_files,
-        use_auth_token=None,
-    )
+  raw_datasets = load_dataset( #TODO: It's only loading 1000 files to test
+      "json",
+      data_files=local_files,
+      use_auth_token=None,
+  )
 
-    text_column_name = "doc"
+  text_column_name = "doc"
 
-    def tokenize_function(examples):
-        return tokenizer(
-            examples[text_column_name],
-            truncation=True,
-            max_length=max_len,
-            # We use this option because DataCollatorForLanguageModeling (see below) is more efficient when it
-            # receives the `special_tokens_mask`.
-            return_special_tokens_mask=True
-            )
-
-    with training_args.main_process_first(desc="dataset map tokenization"):
-        tokenized_datasets = raw_datasets.map(
-            tokenize_function,
-            batched=True,
-            num_proc=4,
-            remove_columns=[text_column_name],
-            load_from_cache_file=True,
-            desc="Running tokenizer on dataset with labels yes and no",
+  def tokenize_function(examples):
+    return tokenizer(
+        examples[text_column_name],
+        truncation=True,
+        max_length=max_len,
+        # We use this option because DataCollatorForLanguageModeling (see below) is more efficient when it
+        # receives the `special_tokens_mask`.
+        return_special_tokens_mask=True
         )
 
-    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+  with training_args.main_process_first(desc="dataset map tokenization"):
+      tokenized_datasets = raw_datasets.map(
+          tokenize_function,
+          batched=True,
+          num_proc=4,
+          remove_columns=[text_column_name],
+          load_from_cache_file=True,
+          desc="Running tokenizer on dataset with labels yes and no",
+      )
 
-    return tokenized_datasets["train"], data_collator
+  data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+
+  return tokenized_datasets["train"], data_collator
+
+
+def main():
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--model_name', type=str, default="BioMedLM-3072", help='model name')
+  parser.add_argument('--exp_name', type=str, default="MLM-LoRA-1kDocs", help='describes the conducted experiment')
+  parser.add_argument('--run', type=int, default=0, help='run number for wandb logging')
+
+  # I/O paths for models, CT, queries and qrels
+  parser.add_argument('--load_dir', type=str, default="LMHead/", help='path to model load dir')
+  parser.add_argument('--save_dir', type=str, default="LMHead-MLM-LoRA/", help='path to model save dir')
+  parser.add_argument("--CT_input", default="datasets/TREC2021/TREC2021_CT_corpus.json", type=str, help='path to JSON for MLM')
+  parser.add_argument("--queries_input", default="queries/SemEval2023/", type=str)
+  parser.add_argument("--qrels_input", default="qrels/SemEval2023/", type=str)
+
+
+  #Model Hyperparamenters
+  parser.add_argument("--max_length", type=int, default=3072)
+  parser.add_argument("--batch_size", default=16, type=int)
+  parser.add_argument("--pooling", default="mean")
+  parser.add_argument("--epochs", default=4, type=int)
+  parser.add_argument("--lr", type=float, default=1e-6)
+  parser.add_argument("--lora_r", type=int, default=16)
+  parser.add_argument("--lora_dropout", type=float, default=0.1)
+  parser.add_argument("--lora_alpha", type=float, default=0.1)
+
+  #Speed and memory optimization parameters
+  parser.add_argument("--fp16", action="store_true", help="Whether to use 16-bit (mixed) precision instead of 32-bit")
+  parser.add_argument("--gradient_accumulation_steps", type=int, default=4, help="Number of updates steps to accumulate before performing a backward/update pass.")
+  parser.add_argument("--gradient_checkpointing", action="store_true", help="If True, use gradient checkpointing to save memory at the expense of slower backward pass.")
+  args = parser.parse_args()
+
+  tokenizer_load_dir = f'models/{args.model_name}/tokenizer/'
+  model_load_dir = f'models/{args.model_name}/{args.load_dir}/'
+  model_save_dir = f'models/{args.model_name}/{args.save_dir}/'
+  create_path(f'models/{args.model_name}/{args.save_dir}/')
+
+  tokenizer = GPT2Tokenizer.from_pretrained(tokenizer_load_dir, max_length=args.max_length)
+  model = GPT2LMHeadModel.from_pretrained(model_load_dir, max_length=args.max_length)
+
+  #model = bias_only_grad(model)
+  model = transform_into_LoRA(model, args.lora_r, args.lora_alpha, args.lora_dropout)
+
+  corpus = None
+  with open(args.CT_input) as JSON_Corpus:
+      corpus = json.load(JSON_Corpus)
+  generate_local_dataset(corpus)
+
+  wandb.init(
+    project="TREC_LLM-Training",
+    name = f'{args.model_name}/{args.exp_name}/run-{args.run}',
+    group = f'{args.model_name}/{args.exp_name}'
+  )
+
+  training_args = TrainingArguments(
+      output_dir=args.save_dir,  # output directory
+      overwrite_output_dir=True,  # overwrite the content of the output directory
+      group_by_length=True,
+
+      #Evaluation parameters
+      save_steps=1000,
+      save_total_limit=4,
+      logging_steps=500,
+      #Hyperparameter optimization parameters
+      per_device_train_batch_size=args.batch_size,
+      dataloader_drop_last=True,
+      learning_rate=args.lr,
+      num_train_epochs=args.epochs, 
+      #Speed and memory optimization parameters
+      gradient_accumulation_steps=args.gradient_accumulation_steps,
+      gradient_checkpointing=args.gradient_checkpointing,
+      fp16=args.fp16
+  )
+
+  # Load Data
+  train_dataset, data_collator = build_dataset(tokenizer, training_args, args.max_length)
+
+  trainer = Trainer(
+      model=model,  # the instantiated 🤗 Transformers model to be trained
+      args=training_args,  # training arguments, defined above
+      data_collator=data_collator,  # data collator for LM
+      train_dataset=train_dataset,  # training dataset
+      tokenizer=tokenizer,
+  )
+
+  # Start Train
+  trainer.train()
+
+  model.save_pretrained(create_path(f'{args.save_dir}/final_checkpoint/'))
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', type=str, default="BioMedLM-3072", help='model name')
-    parser.add_argument('--exp_name', type=str, default="MLM-LoRA-1kDocs", help='describes the conducted experiment')
-    parser.add_argument('--run', type=int, default=0, help='run number for wandb logging')
-    parser.add_argument('--load_dir', type=str, default="LMHead/", help='path to model load dir')
-    parser.add_argument('--save_dir', type=str, default="LMHead-MLM-LoRA/", help='path to model save dir')
-    parser.add_argument("--CT_input", default="datasets/TREC2021/TREC2021_CT_corpus.json", type=str, help='path to JSON for MLM')
-    parser.add_argument("--queries_input", default="queries/SemEval2023/", type=str)
-    parser.add_argument("--qrels_input", default="qrels/SemEval2023/", type=str)
-    parser.add_argument("--max_length", type=int, default=3072)
-
-    #Model Hyperparamenters
-    parser.add_argument("--batch_size", default=16, type=int)
-    parser.add_argument("--pooling", default="mean")
-    parser.add_argument("--epochs", default=4, type=int)
-    parser.add_argument("--lr", type=float, default=1e-6)
-    parser.add_argument("--lora_r", type=int, default=16)
-    parser.add_argument("--lora_dropout", type=float, default=0.1)
-    parser.add_argument("--lora_alpha", type=float, default=0.1)
-
-    #Speed and memory optimization parameters
-    parser.add_argument("--fp16", action="store_true", help="Whether to use 16-bit (mixed) precision instead of 32-bit")
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=4, help="Number of updates steps to accumulate before performing a backward/update pass.")
-    parser.add_argument("--gradient_checkpointing", action="store_true", help="If True, use gradient checkpointing to save memory at the expense of slower backward pass.")
-    args = parser.parse_args()
-
-    tokenizer_load_dir = f'models/{args.model_name}/tokenizer/'
-    model_load_dir = f'models/{args.model_name}/{args.load_dir}/'
-    model_save_dir = f'models/{args.model_name}/{args.save_dir}/'
-    create_path(f'models/{args.model_name}/{args.save_dir}/')
-
-    tokenizer = GPT2Tokenizer.from_pretrained(tokenizer_load_dir, max_length=args.max_length)
-    model = GPT2LMHeadModel.from_pretrained(model_load_dir, max_length=args.max_length)
-
-    #model = bias_only_grad(model)
-    model = transform_into_LoRA(model, args.lora_r, args.lora_alpha, args.lora_dropout)
-
-    corpus = None
-    with open(args.CT_input) as JSON_Corpus:
-        corpus = json.load(JSON_Corpus)
-    generate_local_dataset(corpus)
-
-    wandb.init(
-      project="TREC_LLM-Training",
-      name = f'{args.model_name}/{args.exp_name}/run-{args.run}',
-      group = f'{args.model_name}/{args.exp_name}'
-    )
-
-    training_args = TrainingArguments(
-        output_dir=args.save_dir,  # output directory
-        overwrite_output_dir=True,  # overwrite the content of the output directory
-        group_by_length=True,
-
-        #Evaluation parameters
-        save_steps=1000,
-        save_total_limit=4,
-        logging_steps=500,
-        #Hyperparameter optimization parameters
-        per_device_train_batch_size=args.batch_size,
-        dataloader_drop_last=True,
-        learning_rate=args.lr,
-        num_train_epochs=args.epochs, 
-        #Speed and memory optimization parameters
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        gradient_checkpointing=args.gradient_checkpointing,
-        fp16=args.fp16
-    )
-
-    # Load Data
-    train_dataset, data_collator = build_dataset(tokenizer, training_args, args.max_length)
-
-    trainer = Trainer(
-        model=model,  # the instantiated 🤗 Transformers model to be trained
-        args=training_args,  # training arguments, defined above
-        data_collator=data_collator,  # data collator for LM
-        train_dataset=train_dataset,  # training dataset
-        tokenizer=tokenizer,
-    )
-
-    # Start Train
-    trainer.train()
-
-    model.save_pretrained(create_path(f'{args.save_dir}/final_checkpoint/'))
-
-
-
+  main()

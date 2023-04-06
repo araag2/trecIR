@@ -3,6 +3,7 @@ import argparse
 import os
 import pickle
 import torch
+import numpy as np
 
 from utils_IO import safe_open_w
 
@@ -22,6 +23,17 @@ def get_index_paths(base_dir : str) -> Dict:
     for term in os.listdir(base_dir):
         indexes[term] = f'{base_dir}{term}/'
     return indexes
+
+def encode_subset_corpus(model : SentenceTransformer, corpus_path : str, number_files : int) -> Dict:
+    """
+    Just for testing purposes, encodes subset of corpus using SentenceTransformer model
+    """
+    corpus_raw = json.load(open(corpus_path))
+    txt_encoded = model.encode([corpus_raw[doc_id] for doc_id in corpus_raw][:number_files], show_progress_bar=True)
+    corpus_processed = {}
+    for doc_id, enc_txt in zip(corpus_raw, txt_encoded):
+        corpus_processed[doc_id] = enc_txt
+    return corpus_processed
 
 def encode_corpus(model : SentenceTransformer, corpus_path : str, save_path : str) -> Dict:
     """
@@ -65,8 +77,8 @@ def main():
     parser.add_argument('--corpus_save_path', type=str, help='save corpus to memory', default="../datasets/TREC2021/encoded_corpus/corpus")
 
     # Wether to load corpus from memory, and path from where to load it
-    parser.add_argument('--corpus_load', type=str, help='load corpus from memory', choices=['y', 'n'], default='n')
-    parser.add_argument('--corpus_load_path', type=str, help='path to corpus memory file', default="../datasets/TREC2021/encoded_corpus/corpus-msmarco-distilbert-base-v4.pkl")
+    parser.add_argument('--corpus_load', type=str, help='load corpus from memory', choices=['y', 'n'], default='y')
+    parser.add_argument('--corpus_load_path', type=str, help='path to corpus memory file', default="../datasets/TREC2021/encoded_corpus/corpus-msmarco-distilbert-base-v4-full.pkl")
 
     # Path to queries and qrels files
     parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2021/queries2021.json")
@@ -104,16 +116,20 @@ def main():
     run_name = f'{args.output_dir}run-{args.run}-bi-encoder-{args.model_name}'
 
     query_ids = list(queries.keys())
-    encoded_queries = model.encode([queries[query_id] for query_id in queries], show_progress_bar=True).to('cuda')
+    encoded_queries = model.encode([queries[query_id] for query_id in queries], show_progress_bar=True)
 
     corpus_ids = list(corpus.keys())
-    corpus = torch.Tensor([corpus[doc_id] for doc_id in corpus]).to('cuda')
+    corpus = np.array([corpus[doc_id] for doc_id in corpus])
 
     hits = util.semantic_search(encoded_queries, corpus, top_k=args.top_k)
+    
+    run = {}
+    for query_id, query_hits in zip(query_ids, hits):
+        run[query_id] = {}
+        for hit_id in query_hits:
+            run[query_id][corpus_ids[hit_id['corpus_id']]] = hit_id['score']
+    run = Run.from_dict(run)
 
-    #TODO: Convert hits to run format in order to evaluate
-
-    # Evaluate
     results = {}
     if metrics_bin:
         results = evaluate(Qrels(qrels_bin), run, metrics_bin)

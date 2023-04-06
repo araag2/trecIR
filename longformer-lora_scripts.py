@@ -6,11 +6,25 @@ from tqdm import tqdm
 from torch.optim import AdamW
 from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2ForSequenceClassification
 
-def create_path(path : str):
+def create_path(path : str) -> None:
+    """
+    Creates a path if it does not exist and asserts that it is a directory.
+
+    Args:
+        path (str): path to create
+    """
     os.makedirs(path, exist_ok=True)
     assert os.path.isdir(path), f'No such dir: {path}'
 
-def create_longformer_tokenizer(model_str : str , max_length : int, save_path : str):
+def create_longformer_tokenizer(model_str : str , max_length : int, save_path : str) -> None:
+  """
+  Extends a tokenizer to a longer length in config.
+
+  Args:
+        model_str (str): tokenizer to extend
+        max_length (int): new maximum length
+        save_path (str): path to save extended tokenizer to
+  """
   tokenizer = GPT2Tokenizer.from_pretrained(model_str, model_max_length = max_length)
   tokenizer.model_max_length = max_length
   tokenizer.init_kwargs['model_max_length'] = max_length
@@ -18,7 +32,16 @@ def create_longformer_tokenizer(model_str : str , max_length : int, save_path : 
   create_path(save_path)
   tokenizer.save_pretrained(save_path)
 
-def create_longformer_model(model_str : str , max_length : int, save_path : str):
+def create_longformer_model(model_str : str , max_length : int, save_path : str) -> None:
+    """
+    Extends a model to a longer length by copying the positional embeddings and attention bias.
+    You need to retrain the positional embeddings to account for the new length.
+
+    Args:
+        model_str (str): model to extend
+        max_length (int): new maximum length
+        save_path (str): path to save extended model to
+    """
     model = GPT2LMHeadModel.from_pretrained(model_str)
 
     current_max_pos, embed_size = model.base_model.wpe.weight.shape
@@ -57,7 +80,7 @@ def create_longformer_model(model_str : str , max_length : int, save_path : str)
     create_path(save_path)
     model.save_pretrained(save_path)
 
-if __name__ == "__main__":
+def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--tokenizer_save_dir', type=str, default="models/BioMedLM-3072/tokenizer/", help='path to model save dir')
   parser.add_argument('--model_save_dir', type=str, default="models/BioMedLM-3072/LMHead/", help='path to model save dir')
@@ -66,3 +89,6 @@ if __name__ == "__main__":
 
   create_longformer_tokenizer("stanford-crfm/BioMedLM", args.max_length, args.tokenizer_save_dir)
   create_longformer_model("stanford-crfm/BioMedLM", args.max_length, args.model_save_dir)
+
+if __name__ == '__main__':
+    main()
