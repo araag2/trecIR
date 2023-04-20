@@ -11,10 +11,12 @@ from tqdm import tqdm
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--queries', type=str, help='path to base queries file', default="../queries/TREC2021/queries2021.json")
-    parser.add_argument('--model_name', type=str, help='name of T5 model used to expand topic queries', default="castorini/doc2query-t5-large-msmarco")
+    
+    #castorini/monot5-3b-med-msmarco
+    parser.add_argument('--model_name', type=str, help='name of T5 model used to expand topic queries', default="castorini/monot5-3b-msmarco-10k")
     args = parser.parse_args()
 
-    output_dir = f'{args.queries[:-5]}-expanded'
+    output_dir = f'{args.queries[:-5]}-expanded-{args.model_name.split("/")[-1]}'
 
     queries = None
     with open(args.queries, 'r') as f:

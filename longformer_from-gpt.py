@@ -3,8 +3,7 @@ import argparse
 import os
 
 from tqdm import tqdm
-from torch.optim import AdamW
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, GPT2ForSequenceClassification
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
 def create_path(path : str) -> None:
     """
@@ -16,23 +15,24 @@ def create_path(path : str) -> None:
     os.makedirs(path, exist_ok=True)
     assert os.path.isdir(path), f'No such dir: {path}'
 
-def create_longformer_tokenizer(model_str : str , max_length : int, save_path : str) -> None:
-  """
-  Extends a tokenizer to a longer length in config.
+def create_longformer_tokenizer(model_str : str , max_length : int, save_path : str) -> GPT2Tokenizer:
+    """
+    Extends a tokenizer to a longer length in config.
 
-  Args:
+    Args:
         model_str (str): tokenizer to extend
         max_length (int): new maximum length
         save_path (str): path to save extended tokenizer to
-  """
-  tokenizer = GPT2Tokenizer.from_pretrained(model_str, model_max_length = max_length)
-  tokenizer.model_max_length = max_length
-  tokenizer.init_kwargs['model_max_length'] = max_length
+    """
+    tokenizer = GPT2Tokenizer.from_pretrained(model_str, model_max_length = max_length)
+    tokenizer.model_max_length = max_length
+    tokenizer.init_kwargs['model_max_length'] = max_length
 
-  create_path(save_path)
-  tokenizer.save_pretrained(save_path)
+    create_path(save_path)
+    tokenizer.save_pretrained(save_path)
+    return tokenizer
 
-def create_longformer_model(model_str : str , max_length : int, save_path : str) -> None:
+def create_longformer_model(model_str : str , max_length : int, save_path : str) -> GPT2LMHeadModel:
     """
     Extends a model to a longer length by copying the positional embeddings and attention bias.
     You need to retrain the positional embeddings to account for the new length.
@@ -79,16 +79,26 @@ def create_longformer_model(model_str : str , max_length : int, save_path : str)
 
     create_path(save_path)
     model.save_pretrained(save_path)
+    return model
 
 def main():
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--tokenizer_save_dir', type=str, default="models/BioMedLM-3072/tokenizer/", help='path to model save dir')
-  parser.add_argument('--model_save_dir', type=str, default="models/BioMedLM-3072/LMHead/", help='path to model save dir')
-  parser.add_argument('--max_length', type=int, default=3072, help='inteded max sequence size')
-  args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--tokenizer_save_dir', type=str, default="models/BioMedLM-3072/tokenizer/", help='path to model save dir')
+    parser.add_argument('--model_save_dir', type=str, default="models/BioMedLM-3072/LMHead/", help='path to model save dir')
+    parser.add_argument('--max_length', type=int, default=4096, help='intended max sequence size')
 
-  create_longformer_tokenizer("stanford-crfm/BioMedLM", args.max_length, args.tokenizer_save_dir)
-  create_longformer_model("stanford-crfm/BioMedLM", args.max_length, args.model_save_dir)
+    parser.add_argument('--test', default=True, action=argparse.BooleanOptionalAction)
+    args = parser.parse_args()
+
+    tokenizer = create_longformer_tokenizer("stanford-crfm/BioMedLM", args.max_length, args.tokenizer_save_dir)
+    model = create_longformer_model("stanford-crfm/BioMedLM", args.max_length, args.model_save_dir)
+    print(model)
+
+    if args.test:    
+        inputs = tokenizer(" ".join(["A"] * args.max_length), return_tensors="pt")
+        print(f'input_ids of size {inputs["input_ids"].shape}')
+        outputs = model(**inputs)
+        print(outputs)
 
 if __name__ == '__main__':
     main()
