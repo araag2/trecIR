@@ -83,15 +83,15 @@ def create_longformer_model(model_str : str , max_length : int, save_path : str)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tokenizer_save_dir', type=str, default="models/BioMedLM-3072/tokenizer/", help='path to model save dir')
-    parser.add_argument('--model_save_dir', type=str, default="models/BioMedLM-3072/LMHead/", help='path to model save dir')
+    parser.add_argument('--tokenizer_save_dir', type=str, default="models/distilgpt2/tokenizer/", help='path to model save dir')
+    parser.add_argument('--model_save_dir', type=str, default="models/distilgpt2/LMHead/", help='path to model save dir')
     parser.add_argument('--max_length', type=int, default=4096, help='intended max sequence size')
 
     parser.add_argument('--test', default=True, action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
-    tokenizer = create_longformer_tokenizer("stanford-crfm/BioMedLM", args.max_length, args.tokenizer_save_dir)
-    model = create_longformer_model("stanford-crfm/BioMedLM", args.max_length, args.model_save_dir)
+    tokenizer = create_longformer_tokenizer("distilgpt2", args.max_length, args.tokenizer_save_dir)
+    model = create_longformer_model("distilgpt2", args.max_length, args.model_save_dir)
     print(model)
 
     if args.test:    
