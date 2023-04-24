@@ -3,7 +3,7 @@ import argparse
 import os
 
 from tqdm import tqdm
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from transformers import GPT2Tokenizer, GPT2LMHeadModel, AutoModelForCausalLM
 
 def create_path(path : str) -> None:
     """
@@ -92,7 +92,6 @@ def main():
 
     tokenizer = create_longformer_tokenizer("distilgpt2", args.max_length, args.tokenizer_save_dir)
     model = create_longformer_model("distilgpt2", args.max_length, args.model_save_dir)
-    print(model)
 
     if args.test:    
         inputs = tokenizer(" ".join(["A"] * args.max_length), return_tensors="pt")
