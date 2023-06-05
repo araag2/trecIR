@@ -2,6 +2,7 @@ import json
 import argparse
 import os
 import pandas as pd
+import sys
 
 from utils_IO import safe_open_w
 
@@ -11,6 +12,8 @@ from pyserini.search.lucene import LuceneSearcher
 from pyserini.trectools import TrecRun
 from pyserini.fusion import reciprocal_rank_fusion
 from ranx import Qrels, Run, evaluate
+
+sys.path.insert(0, '../')
 
 def get_index_paths(base_dir : str) -> Dict:
     """

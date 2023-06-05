@@ -3,10 +3,23 @@ import argparse
 import os
 import torch
 
-from utils_IO import safe_open_w
-
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 from tqdm import tqdm
+from typing import TextIO
+
+def safe_open_w(path: str) -> TextIO:
+    """
+    Open "path" for writing, creating any parent directories as needed.
+
+    Args
+        path: path to file, in string format
+
+    Return
+        file: TextIO object
+    """
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return open(path, 'w', encoding='utf8')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -32,11 +45,10 @@ if __name__ == '__main__':
         queries_expanded[query_id] = {}
         queries_expanded[query_id][0] = queries[query_id]
 
-        input_ids = tokenizer.encode(queries[query_id], return_tensors='pt').to(device)
+        input_ids = tokenizer.encode(f'Document: {queries[query_id]} Query: ', return_tensors='pt').to(device)
         outputs = model.generate(
             input_ids=input_ids,
-            max_length=64,
-            #max_new_tokens=100,
+            max_new_tokens=64,
             do_sample=True,
             top_k=10,
             num_return_sequences=40
