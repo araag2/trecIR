@@ -58,7 +58,7 @@ class QueryGenerationDatasetMemory(Dataset):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base_model", default='t5-large', type=str, required=False,
+    parser.add_argument("--base_model", default='t5-3b', type=str, required=False,
                         help="Base model to fine tune.")
     parser.add_argument("--model_type", default='t5', type=str, required=False,
                         help="t5 or llama. t5 also works for longt5, just feed in a longt5 base model")
@@ -70,7 +70,7 @@ def main():
                         help="Triples.tsv path")
     parser.add_argument("--test_pairs_path", default='/public_novasearchdl/jcoelho/msmarco/msmarco_v2_query_generation/dev2.tsv', type=str, required=False,
                         help="Triples.tsv path")                    
-    parser.add_argument("--output_model_path", default=None, type=str, required=True,
+    parser.add_argument("--output_model_path", default='/user/home/aguimas/data/PhD/trained_models/', type=str, required=True,
                         help="Path for trained model and checkpoints.")
     parser.add_argument("--save_every_n_steps", default=0, type=int, required=False,
                         help="Save every N steps. (recommended 10000)")
@@ -82,7 +82,7 @@ def main():
                         help="Per device batch size parameter.")
     parser.add_argument("--gradient_accumulation_steps", default=8, type=int, required=False,
                         help="Gradient accumulation parameter.")
-    parser.add_argument("--learning_rate", default=3e-4, type=float, required=False,
+    parser.add_argument("--learning_rate", default=1e-3, type=float, required=False,
                         help="Learning rate parameter.")
     parser.add_argument("--epochs", default=10, type=int, required=False,
                         help="Number of epochs to train")
@@ -170,7 +170,7 @@ def main():
         dataloader_num_workers = args.dataloader_num_workers,
         remove_unused_columns=False,
         report_to="wandb",
-        run_name=args.wandb_run_name,
+        run_name=f'{args.base_model}_marco-train',
     )
 
     trainer = NonShuffleSeq2SeqTrainer(

@@ -55,9 +55,9 @@ def add_nonoverlap_queries(query_dict : Dict, queries_to_add : Dict) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--queries', type=str, help='path to base queries file', default="queries/queries2021.json")
+    parser.add_argument('--queries', type=str, help='path to base queries file', default="../queries/queries2021.json")
     #"medalpaca/medalpaca-7b" 
-    parser.add_argument('--path_model', type=str, help='path to dir with baseline model', default="t5-3b") #"decapoda-research/llama-7b-hf"
+    parser.add_argument('--path_model', type=str, help='path to dir with baseline model', default="castorini/doc2query-t5-large-msmarco") #"decapoda-research/llama-7b-hf"
 
     # Hyperparameters for query generation
     parser.add_argument('--max_length', type=int, help='max length of input to process', default=512)
