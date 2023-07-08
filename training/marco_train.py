@@ -1,3 +1,4 @@
+import sys
 from tqdm.auto import tqdm
 import torch
 from torch.utils.data import Dataset, DataLoader, SequentialSampler, DistributedSampler
@@ -6,10 +7,12 @@ from transformers import (
     Seq2SeqTrainingArguments,
     Seq2SeqTrainer
 )
-from models import (
-    LLaMAQueryGenerator,
-    T5QueryGenerator,
-)
+
+sys.path.insert(0, "../models/")
+
+from t5 import T5QueryGenerator
+from llama import LLaMAQueryGenerator
+
 import wandb
 import evaluate
 

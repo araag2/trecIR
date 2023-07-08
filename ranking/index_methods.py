@@ -4,6 +4,8 @@ import os
 import pandas as pd
 import sys
 
+sys.path.insert(0, "../")
+
 from utils_IO import safe_open_w
 
 from tqdm import tqdm
@@ -30,13 +32,13 @@ def get_index_paths(base_dir : str) -> Dict:
 def main():
     parser = argparse.ArgumentParser()
     # Path to indexes directory
-    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/TREC2021/pyserini_indexes/")
+    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/pyserini_indexes/")
 
     # Path to queries and qrels files
-    parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2021/queries2021.json")
-    parser.add_argument('--queries_expanded', type=str, help='path to queries file used for RRF', default="../queries/TREC2021/queries2021-expanded.json")
-    parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/TREC2021/qrels2021/qrels2021_binary.json")
-    parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/TREC2021/qrels2021/qrels2021_similiar.json")
+    parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/queries2022.json")
+    parser.add_argument('--queries_expanded', type=str, help='path to queries file used for RRF', default="../queries/queries2022_doc2query-t5-large-msmarco.json")
+    parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/qrels2022_binary.json")
+    parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/qrels2022_similiar.json")
 
     # List of metrics to calculate
     parser.add_argument('--metrics_bin', nargs='+', type=str, help='list of metrics to calculate from binary labels', default=["precision@10", "r-precision", "mrr", \
@@ -70,6 +72,8 @@ def main():
     run_name += '-RM3' if args.rm3 == 'y' else ''
     run_name += '-RRF' if args.rrf == 'y' else ''
 
+    best_queries_for_topics = {}
+
     for index_name in tqdm(index_paths):
         index_output_name = f'{run_name}/res-{index_name}'
 
@@ -93,6 +97,7 @@ def main():
                     for rank, hit in enumerate(hits, start=1):
                         sintetic_query_results.append((query_id, 'Q0', hit.docid, rank, hit.score, f'{query_id}_{sintetic_query_id}'))
                     run_result.append(TrecRun.from_list(sintetic_query_results))
+                best_queries_for_topics[query_id] = sorted(run_result[-1])
 
             run = reciprocal_rank_fusion(run_result, depth=args.K, k=args.K)
             run = pd.DataFrame(data=run.to_numpy(), columns=['q_id', '_1', 'doc_id', '_2', 'score', '_3'])
@@ -128,6 +133,9 @@ def main():
 
         with safe_open_w(f'{index_output_name}-metrics.json') as output_f:
             json.dump(results, output_f, indent=4)
+
+        with safe_open_w(f'{index_output_name}-best_queries.json') as output_f:
+            json.dump(best_queries_for_topics, output_f, indent=4)
 
 if __name__ == '__main__':
     main()

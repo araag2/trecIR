@@ -65,7 +65,7 @@ if __name__ == '__main__':
     parser.add_argument("--delimiter", type=str, help='delimiter between fields', default='\n')
     args = parser.parse_args()
 
-    # python parse_ct-corpus_xml2json.py --input TREC2021/TREC2021_raw --output TREC2021/TREC2021_CT.json
+    # python parse_ct-corpus_xml2json.py --input TREC2021/raw --output TREC2021/TREC2021_CT.json
 
     with safe_open_w(args.output) as output_file_json:
         with safe_open_w(f'{args.output}l') as output_file_json_lines:
