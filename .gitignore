@@ -157,6 +157,7 @@ cython_debug/
 *.zip
 TREC2021/
 TREC2022/
+TREC2023/
 data_json/
 models/
 wandb
