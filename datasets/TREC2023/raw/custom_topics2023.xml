@@ -29,16 +29,75 @@
 <field name="lung comorbidities">none</field>
 <field name="other comorbidities">BPH</field>
 </topic>
-
-<topic number="4" template="breast cancer">
-<field name="definitive diagnosis"></field>
-<field name="HER2"></field>
-<field name="hormone receptors"/>
-<field name="prior chemotherapy"></field>
-<field name="prior radiotherapy"></field>
-<field name="prior mastectomy"></field>
+<topic number="4" template="breast cancer" origin="TREC2021" origin_id="25">
+<field name="definitive diagnosis">yes</field>
+<field name="HER2">positive</field>
+<field name="hormone receptors"/>PR-, ER-</field>
+<field name="prior chemotherapy">no</field>
+<field name="prior radiotherapy">no</field>
+<field name="prior mastectomy">no</field>
 <field name="surgery-related therapy"/>
-<field name="performance status"></field>
+<field name="performance status">ECOG 0</field>
 </topic>
-"25": " The patient is a 42 year-old postmenopausal woman who had a screening sonogram which revealed an abnormality in the right breast. She had no palpable masses on breast exam. Core biopsy was done and revealed a 1.8 cm infiltrating ductal breast carcinoma in the left upper outer quadrant. Lumpectomy was done and the surgical margins were clear. The tumor was HER2-positive and ER/PR negative. Axillary sampling revealed 1 positive lymph node out of 12 sampled. CXR was unremarkable. She is using “well women” multivitamins daily and no other medication. She smokes frequently and consumes alcohol occasionally. She is in a relation with only one partner and has a history of 3 pregnancies and live births. She breastfed all three children. ",
-"61": " The patient is a 45-year-old postmenopausal woman with cytologically confirmed breast cancer. A core biopsy revealed a 3 cm invasive ductal breast carcinoma in the left upper outer quadrant. The tumor is HER2-positive and ER/PR negative. Axillary sampling revealed 5 positive lymph nodes. CXR was remarkable for metastatic lesions. The patient is using multivitamins and iron supplements. She does not smoke or consume alcohol. She is not sexually active and has no children. She is a candidate for tumor resection and agrees to do so prior to chemotherapy. ",
+<topic number="5" template="breast cancer" origin="TREC2021" origin_id="61">
+<field name="definitive diagnosis">yes</field>
+<field name="HER2">positive</field>
+<field name="hormone receptors"/>PR-, ER-</field>
+<field name="prior chemotherapy">no</field>
+<field name="prior radiotherapy">no</field>
+<field name="prior mastectomy">no</field>
+<field name="surgery-related therapy"/>
+<field name="performance status">ECOG 0</field>
+</topic>
+<topic number="6" template="COVID-19" origin="TREC2022" origin_id="46">
+<field name="definitive diagnosis">PCR-confirmed</field>
+<field name="symptoms">fever, muscle pain, cough</field>
+<field name="hospitalization">no</field>
+<field name="ventilation">
+<field name="vaccination status">
+<field name="oxygen saturation">
+<field name="comorbid respiratory diseases">
+</topic>
+<topic number="7" template="anxiety" origin="CSIRO2015" origin_id="trec2014-7">
+<field name="definitive diagnosis"></field>
+<field name="age">26 years old</field>
+<field name="proficient languages">
+<field name="SSASI">
+<field name="HAM-A">
+<field name="PHQ-9">
+<field name="HAM-D">
+<field name="GAD-7"/>
+<field name="Beck Depression Inventory"/>
+<field name="suicidal ideation">yes</field>
+<field name="dementia">no</field>
+<topic number="8" template="COPD" origin="CSIRO2015" origin_id="trec2014-23">
+<field name="definitive diagnosis">no</field>
+<field name="FEV1">
+<field name="GOLD stage">
+<field name="exacerbations">week prior</field>
+<field name="COPD treatments">none</field>
+<field name="smoking history">heavy smoking</field>
+<field name="lung comorbidities">cyanotic, tachypneic, barrel shaped chest, diffuse rales</field>
+<field name="other comorbidities">spinal stenosis, diabetes, hypothyroidism, mild psoriasis</field>
+<topic number="9" template="COPD" origin="TREC2021" origin_id="16">
+<field name="definitive diagnosis">no</field>
+<field name="FEV1">
+<field name="GOLD stage">
+<field name="exacerbations">past two years</field>
+<field name="COPD treatments">none</field>
+<field name="smoking history">1 to 2 packs a day</field>
+<field name="lung comorbidities">mildly distended neck veins, a barrel-shaped chest, moderate inspiratory and expiratory wheezes</field>
+<field name="other comorbidities">chronic cough</field>
+<topic number="10" template="type 2 diabetes">
+<field name="definitive diagnosis">yes</field>
+<field name="HbA1c">
+<field name="glucose">
+<field name="BMI">
+<field name="insulin">
+<field name="metformin">
+<field name="other anti-diabetic drugs">thrombolytic therapy</field>
+<field name="diet restrictions">
+<field name="exercise">
+<field name="ketoacidosis history">
+<field name="comorbidities">hypertension</field>
+<field name="hospitalization events">two weeks ago</field>

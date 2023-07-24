@@ -14,8 +14,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, help='path to input dir/file', required=True)
     parser.add_argument('--output', type=str, help='path to output dir/file', required=True)
-    parser.add_argument("--rel", nargs="+", help='0 is non-relevant, 1 is excluded and 2 is eligible', default=[0, 1, 2])
-    parser.add_argument("--delimiter", type=str, help='delimiter between fields', default=' ')
+    parser.add_argument("--rel", nargs="+", help='0 is non-relevant, 1 is excluded and 2 is eligible', default=[0, 0, 1])
+    parser.add_argument("--delimiter", type=str, help='delimiter between fields', default='	')
     args = parser.parse_args()
 
     # python parse_qrels_txt2json.py --input TREC2021/TREC2021_raw/qrels2021.txt --output ../qrels/TREC2021/qrels2021.json

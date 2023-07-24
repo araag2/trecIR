@@ -59,14 +59,14 @@
 <field name="tuberculosis"></field>
 <field name="DAS-28 CRP"/>
 <field name="comorbidities"></field>
-<topic number="31" template="sickle cell anemia">
+<topic number="7" template="sickle cell anemia">
 <field name="definitive diagnosis"></field>
 <field name="blood transfusion"></field>
 <field name="hemoglobin"></field>
 <field name="last vaso occlusive crisis"></field>
 <field name="stroke history"></field>
 </topic>
-<topic number="7" template="type 2 diabetes">
+<topic number="8" template="type 2 diabetes">
 <field name="definitive diagnosis"></field>
 <field name="HbA1c"></field>
 <field name="glucose"></field>
