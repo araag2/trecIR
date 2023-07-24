@@ -1,0 +1,82 @@
+<topics task="2023 TREC Clinical Trials Templates">
+<topic number="1" template="glaucoma">
+<field name="definitive diagnosis"></field>
+<field name="intraocular pressure"/>
+<field name="visual field"></field>
+<field name="visual acuity"></field>
+<field name="prior cataract surgery"></field>
+<field name="prior LASIK surgery"></field>
+<field name="comorbid ocular diseases"></field>
+</topic>
+<topic number="2" template="anxiety">
+<field name="definitive diagnosis"></field>
+<field name="age"></field>
+<field name="proficient languages"></field>
+<field name="SSASI"></field>
+<field name="HAM-A"></field>
+<field name="PHQ-9"></field>
+<field name="HAM-D"></field>
+<field name="GAD-7"/>
+<field name="Beck Depression Inventory"/>
+<field name="suicidal ideation"></field>
+<field name="dementia"></field>
+</topic>
+<topic number="3" template="COPD">
+<field name="definitive diagnosis"></field>
+<field name="FEV1"></field>
+<field name="GOLD stage"></field>
+<field name="exacerbations"></field>
+<field name="COPD treatments"></field>
+<field name="smoking history"></field>
+<field name="lung comorbidities"></field>
+<field name="other comorbidities"></field>
+</topic>
+<topic number="4" template="breast cancer">
+<field name="definitive diagnosis"></field>
+<field name="HER2"></field>
+<field name="hormone receptors"/>
+<field name="prior chemotherapy"></field>
+<field name="prior radiotherapy"></field>
+<field name="prior mastectomy"></field>
+<field name="surgery-related therapy"/>
+<field name="performance status"></field>
+</topic>
+<topic number="5" template="COVID-19">
+<field name="definitive diagnosis"></field>
+<field name="symptoms"></field>
+<field name="hospitalization"></field>
+<field name="ventilation"></field>
+<field name="vaccination status"></field>
+<field name="oxygen saturation"></field>
+<field name="comorbid respiratory diseases"></field>
+</topic>
+<topic number="6" template="rheumatoid arthritis">
+<field name="definitive diagnosis"></field>
+<field name="active DMARD treatment"></field>
+<field name="prior DMARD treatment"></field>
+<field name="other RA medications"></field>
+<field name="affected joints"></field>
+<field name="tuberculosis"></field>
+<field name="DAS-28 CRP"/>
+<field name="comorbidities"></field>
+<topic number="31" template="sickle cell anemia">
+<field name="definitive diagnosis"></field>
+<field name="blood transfusion"></field>
+<field name="hemoglobin"></field>
+<field name="last vaso occlusive crisis"></field>
+<field name="stroke history"></field>
+</topic>
+<topic number="7" template="type 2 diabetes">
+<field name="definitive diagnosis"></field>
+<field name="HbA1c"></field>
+<field name="glucose"></field>
+<field name="BMI"></field>
+<field name="insulin"></field>
+<field name="metformin"></field>
+<field name="other anti-diabetic drugs"></field>
+<field name="diet restrictions"></field>
+<field name="exercise"></field>
+<field name="ketoacidosis history"></field>
+<field name="comorbidities"></field>
+<field name="hospitalization events"></field>
+</topic>

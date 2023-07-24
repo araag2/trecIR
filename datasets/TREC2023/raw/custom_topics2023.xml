@@ -1,0 +1,44 @@
+<topics task="2023 TREC Clinical Trials Custom Queries">
+<topic number="1" template="COPD" origin="TREC2021" origin_id="14">
+<field name="definitive diagnosis">yes</field>
+<field name="FEV1">70</field>
+<field name="GOLD stage">II</field>
+<field name="exacerbations">several last week</field>
+<field name="COPD treatments">none</field>
+<field name="smoking history"></field>
+<field name="lung comorbidities">OSA, obesity hypoventilation syndrome</field>
+<field name="other comorbidities">hypoxia</field>
+</topic>
+<topic number="2" template="COPD" origin="TREC2021" origin_id="16">
+<field name="definitive diagnosis">yes</field>
+<field name="FEV1">88%</field>
+<field name="GOLD stage">I</field>
+<field name="exacerbations">none</field>
+<field name="COPD treatments">none</field>
+<field name="smoking history">none</field>
+<field name="lung comorbidities">diastolic CHF, pulmonary hypertension</field>
+<field name="other comorbidities">chronic ASD</field>
+</topic>
+<topic number="3" template="COPD" origin="TREC2021" origin_id="18">
+<field name="definitive diagnosis">yes</field>
+<field name="FEV1">60%</field>
+<field name="GOLD stage">II</field>
+<field name="exacerbations">one day before</field>
+<field name="COPD treatments">Duo-Neb, VitD3</field>
+<field name="smoking history">20 cigarettes/day</field>
+<field name="lung comorbidities">none</field>
+<field name="other comorbidities">BPH</field>
+</topic>
+
+<topic number="4" template="breast cancer">
+<field name="definitive diagnosis"></field>
+<field name="HER2"></field>
+<field name="hormone receptors"/>
+<field name="prior chemotherapy"></field>
+<field name="prior radiotherapy"></field>
+<field name="prior mastectomy"></field>
+<field name="surgery-related therapy"/>
+<field name="performance status"></field>
+</topic>
+"25": " The patient is a 42 year-old postmenopausal woman who had a screening sonogram which revealed an abnormality in the right breast. She had no palpable masses on breast exam. Core biopsy was done and revealed a 1.8 cm infiltrating ductal breast carcinoma in the left upper outer quadrant. Lumpectomy was done and the surgical margins were clear. The tumor was HER2-positive and ER/PR negative. Axillary sampling revealed 1 positive lymph node out of 12 sampled. CXR was unremarkable. She is using “well women” multivitamins daily and no other medication. She smokes frequently and consumes alcohol occasionally. She is in a relation with only one partner and has a history of 3 pregnancies and live births. She breastfed all three children. ",
+"61": " The patient is a 45-year-old postmenopausal woman with cytologically confirmed breast cancer. A core biopsy revealed a 3 cm invasive ductal breast carcinoma in the left upper outer quadrant. The tumor is HER2-positive and ER/PR negative. Axillary sampling revealed 5 positive lymph nodes. CXR was remarkable for metastatic lesions. The patient is using multivitamins and iron supplements. She does not smoke or consume alcohol. She is not sexually active and has no children. She is a candidate for tumor resection and agrees to do so prior to chemotherapy. ",

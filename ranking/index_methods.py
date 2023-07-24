@@ -32,7 +32,7 @@ def get_index_paths(base_dir : str) -> Dict:
 def main():
     parser = argparse.ArgumentParser()
     # Path to indexes directory
-    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/pyserini_indexes/")
+    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/TREC2021/indexes/")
 
     # Path to queries and qrels files
     parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/queries2022.json")
@@ -42,7 +42,7 @@ def main():
 
     # List of metrics to calculate
     parser.add_argument('--metrics_bin', nargs='+', type=str, help='list of metrics to calculate from binary labels', default=["precision@10", "r-precision", "mrr", \
-    "recall@10", "recall@100", "recall@500", "recall@1000", "recall"])
+    "recall@1000"])
     parser.add_argument('--metrics_similiar', nargs='+', type=str, help='list of metrics to calculate from 0 1 2 labels', default=["ndcg@10"])
 
     # BM25 parameters
@@ -62,7 +62,7 @@ def main():
 
     index_paths = get_index_paths(args.index_dir)
 
-    queries = json.load(open(args.queries)) if args.rm3 == 'n' else json.load(open(args.queries_expanded))
+    queries = json.load(open(args.queries)) if args.rrf == 'n' else json.load(open(args.queries_expanded))
     qrels_bin = json.load(open(args.qrels_bin))
     qrels_similiar = json.load(open(args.qrels_similiar))
     metrics_bin = args.metrics_bin
@@ -96,8 +96,11 @@ def main():
                     sintetic_query_results = []
                     for rank, hit in enumerate(hits, start=1):
                         sintetic_query_results.append((query_id, 'Q0', hit.docid, rank, hit.score, f'{query_id}_{sintetic_query_id}'))
-                    run_result.append(TrecRun.from_list(sintetic_query_results))
-                best_queries_for_topics[query_id] = sorted(run_result[-1])
+
+                    if sintetic_query_results != []:
+                        run_result.append(TrecRun.from_list(sintetic_query_results))
+
+                #best_queries_for_topics[query_id] = sorted(run_result[-1])
 
             run = reciprocal_rank_fusion(run_result, depth=args.K, k=args.K)
             run = pd.DataFrame(data=run.to_numpy(), columns=['q_id', '_1', 'doc_id', '_2', 'score', '_3'])
@@ -134,8 +137,8 @@ def main():
         with safe_open_w(f'{index_output_name}-metrics.json') as output_f:
             json.dump(results, output_f, indent=4)
 
-        with safe_open_w(f'{index_output_name}-best_queries.json') as output_f:
-            json.dump(best_queries_for_topics, output_f, indent=4)
+        #with safe_open_w(f'{index_output_name}-best_queries.json') as output_f:
+        #    json.dump(best_queries_for_topics, output_f, indent=4)
 
 if __name__ == '__main__':
     main()

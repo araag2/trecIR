@@ -27,8 +27,8 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    # python parse_ct-corpus_json2pyserini.py --input /user/home/aguimas/data/PhD/trecIR/datasets/TREC2021/base_indexes/
-    # --output TREC2021/pyserini_base_index/
+    # python parse_ct-corpus_json2pyserini.py --input /user/home/aguimas/data/PhD/trecIR/datasets/TREC2021/TREC2021_CT.json
+    # --output TREC2021/base_indexes/
 
     with open(args.input, 'r') as json_struct_file:
         struct_data = json.load(json_struct_file)
