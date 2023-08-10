@@ -1,0 +1,4 @@
+{
+    "expansion_prompt" : "Hello. You are a helpful assistant for clinical trial recruitment. Your task is to expand a patient note description, in order to provide broader context on the patient's clinical history.\nYou should expand the patient description following the steps below:\n1. For each sentence in the patient note, preceed it with a sentence_id, followed by a '.'\n2. The patient note refers to a patient with $disease_description\n4. You should output only the new textual description of the patient note.\nHere is the original patient note: $query\nPlain text output without indent:",
+    "COPD" : "Chronic obstructive pulmonary disease (COPD), a common lung disease causing restricted airflow and breathing problems, sometimes called emphysema or chronic bronchitis."
+}

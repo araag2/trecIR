@@ -125,15 +125,16 @@ def main():
     parser.add_argument('--max_tokens', type=int, help='max tokens to use', default=4096)
 
     # Path to prompt files, queries and qrels files
-    parser.add_argument('--prompt_file', type=str, help='path to queries file', default="../prompts/TrialGPT.json")
+    parser.add_argument('--prompt_file', type=str, help='path to queries file', default="../prompts/QueryExpansionPrompts.json")
     parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2023/custom_queries2023.json")
     parser.add_argument('--trials', type=str, help='path to queries file', default="../queries/TREC2023/custom_queries2023.json")
 
     # Output options and directory
-    parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2023/ranking/")
+    parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2023/prompts/")
     args = parser.parse_args()
 
     # Creating our inferencer object
+    login(token='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')
     llama = LLaMAInferencer(base_model=args.base_model, max_tokens=args.max_tokens)
 
     # Loading files
@@ -142,7 +143,8 @@ def main():
     trials = json.load(open(args.trials))
     
     # Running inference
-    results = llama.trialgpt_eligibility_inference(prompt_file, queries, trials)
+    results = llama.inference(Template(prompt_file["expansion_prompt"]).safe_substitute(disease_description = prompt_file["COPD"]), queries)
+    #results = llama.trialgpt_eligibility_inference(prompt_file, queries, trials)
 
     with safe_open_w(f'{args.output_dir}{args.queries.split("/")[:-1][:-5]}-trialgpt-prompts.json') as output_f:
         json.dump(results, output_f, indent=4)
