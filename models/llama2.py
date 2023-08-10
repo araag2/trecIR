@@ -87,24 +87,27 @@ class LLaMAInferencer():
 
         return self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
     
-    def build_trial_gpt_prompt(self, prompt : str, query_patient : str, clinical_trial : str) -> str:
-        return None
+    def build_trial_gpt_prompt(self, prompt : str, query_patient : str, clinical_trials : list[str]) -> str:
+        return [Template(prompt).substitute(query_patient=query_patient, clinical_trial=trial) for trial in clinical_trials]
     
     # documents: list of strings; each string a document.
     def trialgpt_eligibility_inference(self, prompt_file : dict[str], patient_queries : list[str], clinical_trials : list[str], generation_config : GenerationConfig = None) -> list[str]:
-        model_eval = self.model.eval()
+        model = self.model.eval()
         generation_config = generation_config if generation_config is not None else model_eval.generation_config
 
         outputs_by_patient_query = {}
         outputs = []
 
-        base_prompt = Template(prompt_file["full_criterion-level_eligibility_prompt"]).substitute(eligibility = prompt_file["eligibility_prompt"], in_context_example = prompt_file["in_context_eligibility-example"])
+        base_prompt = Template(prompt_file["full_criterion-level_eligibility_prompt"]).safe_substitute(eligibility = prompt_file["eligibility_prompt"], in_context_example = prompt_file["in_context_eligibility-example"])
+
+        for patient in patient_queries:
+            patient_prompts = self.build_trial_gpt_prompt(base_prompt, patient, clinical_trials)
+            inputs = self.tokenize_inference(patient_prompts)
+            patient_outputs = model.generate(**inputs, generation_config=generation_config)
+            outputs.extend(patient_outputs)
 
         print(prompt_file)
-        print(patient_queries)
-        print(clinical_trials)
-
-
+        print(base_prompt)
 
         #for sample in batch(queries, batchsize):
         #    inputs = self.tokenize_inference(prompt, sample)
@@ -139,7 +142,10 @@ def main():
     trials = json.load(open(args.trials))
     
     # Running inference
-    llama.trialgpt_eligibility_inference(prompt_file, queries, trials)
+    results = llama.trialgpt_eligibility_inference(prompt_file, queries, trials)
+
+    with safe_open_w(f'{args.output_dir}{args.queries.split("/")[:-1][:-5]}-trialgpt-prompts.json') as output_f:
+        json.dump(results, output_f, indent=4)
 
 if __name__ == '__main__':
     main()
