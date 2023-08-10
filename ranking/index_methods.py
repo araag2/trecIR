@@ -32,12 +32,12 @@ def get_index_paths(base_dir : str) -> Dict:
 def main():
     parser = argparse.ArgumentParser()
     # Path to indexes directory
-    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/TREC2021/indexes/")
+    parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/TREC2023/indexes/")
 
     # Path to queries and qrels files
-    parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/queries2022.json")
+    parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2023/custom_queries2023.json")
     parser.add_argument('--queries_expanded', type=str, help='path to queries file used for RRF', default="../queries/queries2022_doc2query-t5-large-msmarco.json")
-    parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/qrels2022_binary.json")
+    parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/qrels2023_custom.json")
     parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/qrels2022_similiar.json")
 
     # List of metrics to calculate
@@ -50,14 +50,14 @@ def main():
 
     # Binary flags to enable or disable ranking methodss
     parser.add_argument('--rm3', type=str, help='enable or disable rm3', choices=['y', 'n'], default='y')
-    parser.add_argument('--rrf', type=str, help='enable or disable rrf', choices=['y', 'n'], default='y')
+    parser.add_argument('--rrf', type=str, help='enable or disable rrf', choices=['y', 'n'], default='n')
     
     # Run number
     parser.add_argument('--run', type=int, help='run number', default=1)
 
     # Output options and directory
     parser.add_argument('--save_hits', type=str, help='save hit dictionaries', choices=['y', 'n'], default='n')
-    parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2021/ranking/")
+    parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2023/ranking/")
     args = parser.parse_args()
 
     index_paths = get_index_paths(args.index_dir)
@@ -127,9 +127,9 @@ def main():
         # Evaluate
         results = {}
         if metrics_bin:
-            results = evaluate(Qrels(qrels_bin), run, metrics_bin)
+            results = evaluate(Qrels(qrels_bin), run, metrics_bin, make_comparable=True)
         if metrics_similiar:
-            results.update({"ndcg": evaluate(Qrels(qrels_similiar), run, metrics_similiar)})
+            results.update({"ndcg": evaluate(Qrels(qrels_similiar), run, metrics_similiar, make_comparable=True)})
 
         for metric in results:
             results[metric] = round(results[metric], 4)

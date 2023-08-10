@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=str, help='path to output dir/file', required=True)
     args = parser.parse_args()
 
-    # python parse_topics2023_xml2json.py --input TREC2023/raw/topics2023.xml --output ../queries/TREC2023/queries2023.json
+    # python parse_topics2023_xml2json.py --input TREC2023/raw_topics/custom_topics2023.xml --output ../queries/TREC2023/custom_queries2023.json
 
     output_dict = {}
 
