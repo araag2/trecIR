@@ -1,4 +1,11 @@
 {
     "expansion_prompt" : "Hello. You are a helpful assistant for clinical trial recruitment. Your task is to expand a patient note description, in order to provide broader context on the patient's clinical history.\nYou should expand the patient description following the steps below:\n1. The patient note refers to a patient with $disease_description\n2. You should output only the new textual description of the patient note.\n3. Each sentence you output should be preceded by a sentence id, and each sentence should be in a different line.\nHere is the original patient note: $query\nPlain text output without indent: ",
-    "COPD" : "Chronic obstructive pulmonary disease (COPD), a common lung disease causing restricted airflow and breathing problems, sometimes called emphysema or chronic bronchitis."
+    "glaucoma" : "Glaucoma is a group of eye diseases that can cause vision loss and blindness by damaging a nerve in the back of your eye called the optic nerve",
+    "anxiety" : "Anxiety is a feeling of unease, such as worry or fear, that can be mild or severe. For people with anxiety disorders, feelings of worry and fear are constant and overwhelming, and can be disabling.", 
+    "COPD" : "Chronic obstructive pulmonary disease (COPD), a common lung disease causing restricted airflow and breathing problems, sometimes called emphysema or chronic bronchitis.",
+    "breast cancer" : "Breast cancer is cancer that forms in the cells of the breasts.",
+    "COVID-19" : "Coronavirus disease (COVID-19) is an infectious disease caused by the SARS-CoV-2 virus. The disease causes respiratory illness (like the flu) with symptoms such as a cough, fever, and in more severe cases, difficulty breathing.",
+    "rheumatoid arthritis" : "Rheumatoid arthritis (RA) is a chronic (long-term) disease that causes inflammation and deformity of the joints. Symptoms may come and go, or vary, but typically include joint pain and stiffness.",
+    "sickle cell anemia" : "Sickle cell anemia is an inherited form of anemia — a condition in which there aren't enough healthy red blood cells to carry adequate oxygen throughout your body.",
+    "type 2 diabetes" : "Type 2 diabetes is a chronic condition that affects the way your body metabolizes sugar (glucose) — an important source of fuel for your body."
 }
