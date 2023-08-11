@@ -55,10 +55,10 @@ class LLaMAInferencer():
     
     @staticmethod
     def get_tokenizer(base_model : str = "meta-llama/Llama-2-13b-chat-hf"):
-        return LlamaTokenizer.from_pretrained(base_model)
+        return LlamaTokenizer.from_pretrained(base_model, padding_side='left')
     
     def build_simple_prompt(self, prompt : str, queries : list[str]) -> list[str]:
-        return [Template(prompt).substitute(query=query) for query in queries]
+        return [Template(prompt).substitute(query=queries[patient_id]) for patient_id in queries]
 
     def tokenize_inference(self, texts : list[str]) -> dict[str,torch.Tensor]:
         tokenized = self.tokenizer(texts, padding=True, truncation='longest_first', return_tensors='pt', max_length=self.max_tokens).to("cuda")
@@ -70,20 +70,16 @@ class LLaMAInferencer():
         return tokenized
     
     # documents: list of strings; each string a document.
-    def inference(self, prompt : str, queries : list[str] = [], batchsize : int = 1, generation_config : GenerationConfig = None) -> list[str]:
+    def inference(self, prompt : str, queries : list[str] = [], generation_config : GenerationConfig = None) -> list[str]:
         model_eval = self.model.eval()
         generation_config = generation_config if generation_config is not None else model_eval.generation_config
 
-        def batch(X, batch_size : int = 1) -> list[list[str]]:
-            l = len(X)
-            for idx in range(0, l, batch_size):
-                yield X[idx:min(idx + batch_size, l)]
-
-        outputs = []
-        for sample in batch(queries, batchsize):
-            inputs = self.tokenize_inference(self.build_simple_prompt(prompt, sample))
-            sample_outputs = model_eval.generate(**inputs, generation_config=generation_config)
-            outputs.extend(sample_outputs)
+        print(queries)
+        inputs = self.tokenize_inference(self.build_simple_prompt(prompt, queries))
+        print(inputs)
+        input_lengths = [len(inp) for inp in inputs["input_ids"]]
+        print(input_lengths)
+        outputs = model_eval.generate(**inputs, generation_config=generation_config)
 
         return self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
     
@@ -93,7 +89,7 @@ class LLaMAInferencer():
     # documents: list of strings; each string a document.
     def trialgpt_eligibility_inference(self, prompt_file : dict[str], patient_queries : list[str], clinical_trials : list[str], generation_config : GenerationConfig = None) -> list[str]:
         model = self.model.eval()
-        generation_config = generation_config if generation_config is not None else model_eval.generation_config
+        generation_config = generation_config if generation_config is not None else model.generation_config
 
         outputs_by_patient_query = {}
         outputs = []
@@ -134,7 +130,6 @@ def main():
     args = parser.parse_args()
 
     # Creating our inferencer object
-    login(token='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')
     llama = LLaMAInferencer(base_model=args.base_model, max_tokens=args.max_tokens)
 
     # Loading files
@@ -146,7 +141,7 @@ def main():
     results = llama.inference(Template(prompt_file["expansion_prompt"]).safe_substitute(disease_description = prompt_file["COPD"]), queries)
     #results = llama.trialgpt_eligibility_inference(prompt_file, queries, trials)
 
-    with safe_open_w(f'{args.output_dir}{args.queries.split("/")[:-1][:-5]}-trialgpt-prompts.json') as output_f:
+    with safe_open_w(f'{args.output_dir}{args.queries.split("/")[-1][:-5]}_trialgpt-prompts.json') as output_f:
         json.dump(results, output_f, indent=4)
 
 if __name__ == '__main__':
