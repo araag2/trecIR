@@ -13,8 +13,8 @@ def safe_open_w(path: str):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, help='path to input dir/file', required=True)
-    parser.add_argument('--output', type=str, help='path to output dir/file', required=True)
+    parser.add_argument('--input', type=str, default="../queries/queries2021.json")
+    parser.add_argument('--output', type=str, default="../queries/queries2021_split-lines.json")
     args = parser.parse_args()
 
     # python parse_topics2023_xml2json.py --input TREC2023/raw_topics/custom_topics2023.xml --output ../queries/TREC2023/custom_queries2023.json

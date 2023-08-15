@@ -32,7 +32,12 @@ def get_detailed_description(root):
         return root.find('detailed_description').findtext('textblock')
     except AttributeError:
         return None
-
+    
+def get_intervention(root):
+    try:
+        return root.find('intervention').findtext('intervention_name')
+    except AttributeError:
+        return None
 
 def get_conditions(root):
     try:
@@ -137,8 +142,10 @@ def parse_file_list(file_list):
 
         detailed_description = remove_whitespaces_except_one_space_from_field(
             get_detailed_description(root))
+        
+        intervention = remove_whitespaces_except_one_space_from_field(get_intervention(root))
 
-        conditions = get_conditions(root)
+        conditions = str(get_conditions(root)).replace("[", "").replace("]", "").replace("'", "")
 
         eligibility_study_pop = remove_whitespaces_except_one_space_from_field(
             get_eligibility_study_pop(root))
@@ -153,18 +160,28 @@ def parse_file_list(file_list):
 
         CT_name = str(xml_f_path.split('/')[-1][:-4])
 
+        if eligibility_criteria:
+            eligibility_criteria = eligibility_criteria.replace(" -", "\n")
+
+            if len(eligibility_criteria.split("Exclusion Criteria:")) == 2:
+                eligibility_criteria = eligibility_criteria.split("Exclusion Criteria:")
+            elif len(eligibility_criteria.split("EXCLUSION CRITERIA:")) == 2:
+                eligibility_criteria = eligibility_criteria.split("EXCLUSION CRITERIA:")
+
         ct = {
             "id": CT_name,
             "brief_title": brief_title,
             "official_title": official_title,
             "brief_summary": brief_summary,
             "detailed_description": detailed_description,
+            "intervention" : intervention,
 
             "condition": conditions,
 
             "eligibility": {
                 "study_pop": eligibility_study_pop,
-                "criteria": eligibility_criteria,
+                "inclusion_criteria": eligibility_criteria[0] if eligibility_criteria and len(eligibility_criteria) == 2 else eligibility_criteria,
+                "exclusion_criteria": eligibility_criteria[1] if eligibility_criteria and len(eligibility_criteria) == 2 else eligibility_criteria,
                 "gender": eligibility_gender,
                 "minimum_age": eligibility_minimum_age,
                 "maximum_age": eligibility_maximum_age,
