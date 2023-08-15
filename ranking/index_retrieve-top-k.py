@@ -45,6 +45,8 @@ def main():
     parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2023/ranking/")
     args = parser.parse_args()
 
+    missing_trials = {'NCT04510038', 'NCT04418518', 'NCT04205084', 'NCT02954432', 'NCT04659772', 'NCT01227460', 'NCT02441088', 'NCT04701840', 'NCT02692924', 'NCT04753255', 'NCT04361123', 'NCT03391388', 'NCT04359277', 'NCT03793829', 'NCT04595149', 'NCT01761058', 'NCT04363502', 'NCT03422237', 'NCT04707222', 'NCT04817787'}
+
     index_paths = get_index_paths(args.index_dir)
 
     queries = json.load(open(args.queries))
@@ -65,8 +67,9 @@ def main():
 
             hits = searcher.search(queries[query_id], k=args.K)
             for hit in hits:
-                results[query_id]['docs'].append(hit.docid)
-                results[query_id]['scores'].append(hit.score)
+                if hit not in missing_trials:
+                    results[query_id]['docs'].append(hit.docid)
+                    results[query_id]['scores'].append(hit.score)
 
         with safe_open_w(f'{index_output_name}-top-10000-hits.json') as output_f:
             json.dump(results, output_f, indent=4)
