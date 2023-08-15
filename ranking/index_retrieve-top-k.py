@@ -67,7 +67,7 @@ def main():
 
             hits = searcher.search(queries[query_id], k=args.K)
             for hit in hits:
-                if hit not in missing_trials:
+                if hit.docid not in missing_trials:
                     results[query_id]['docs'].append(hit.docid)
                     results[query_id]['scores'].append(hit.score)
 
