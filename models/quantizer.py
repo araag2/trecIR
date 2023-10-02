@@ -10,7 +10,8 @@ from typing import TextIO
 
 from hurry.filesize import size as size_bytes
 from huggingface_hub import login
-from transformers import LlamaForCausalLM, LlamaTokenizer, GenerationConfig, BitsAndBytesConfig, GPTQQuantizer
+from transformers import LlamaForCausalLM, LlamaTokenizer, GenerationConfig, BitsAndBytesConfig
+from optimum.gptq import GPTQQuantizer, load_quantized_model
 
 def main():
     base_model = "meta-llama/Llama-2-7b-chat-hf"

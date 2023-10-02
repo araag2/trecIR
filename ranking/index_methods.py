@@ -35,8 +35,8 @@ def main():
     parser.add_argument('--index_dir', type=str, help='path to dir with several indexes', default="../datasets/TREC2023/indexes/")
 
     # Path to queries and qrels files
-    parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2023/custom_queries2023.json")
-    parser.add_argument('--queries_expanded', type=str, help='path to queries file used for RRF', default="../queries/queries2022_doc2query-t5-large-msmarco.json")
+    parser.add_argument('--queries', type=str, help='path to queries file', default="../queries/TREC2023/queries2023_manual-expand.json")
+    parser.add_argument('--queries_expanded', type=str, help='path to queries file used for RRF', default="../queries/TREC2023/queries2023_manual-expand_doc2query-t5-large-msmarco.json")
     parser.add_argument('--qrels_bin', type=str, help='path to qrles file in binary form', default="../qrels/qrels2023_custom.json")
     parser.add_argument('--qrels_similiar', type=str, help='path to qrles file in similarity form', default="../qrels/qrels2022_similiar.json")
 
@@ -50,13 +50,13 @@ def main():
 
     # Binary flags to enable or disable ranking methodss
     parser.add_argument('--rm3', type=str, help='enable or disable rm3', choices=['y', 'n'], default='y')
-    parser.add_argument('--rrf', type=str, help='enable or disable rrf', choices=['y', 'n'], default='n')
+    parser.add_argument('--rrf', type=str, help='enable or disable rrf', choices=['y', 'n'], default='y')
     
     # Run number
     parser.add_argument('--run', type=int, help='run number', default=1)
 
     # Output options and directory
-    parser.add_argument('--save_hits', type=str, help='save hit dictionaries', choices=['y', 'n'], default='n')
+    parser.add_argument('--save_hits', type=str, help='save hit dictionaries', choices=['y', 'n'], default='y')
     parser.add_argument('--output_dir', type=str, help='path to output_dir', default="../outputs/TREC2023/ranking/")
     args = parser.parse_args()
 
@@ -65,8 +65,8 @@ def main():
     queries = json.load(open(args.queries)) if args.rrf == 'n' else json.load(open(args.queries_expanded))
     qrels_bin = json.load(open(args.qrels_bin))
     qrels_similiar = json.load(open(args.qrels_similiar))
-    metrics_bin = args.metrics_bin
-    metrics_similiar = args.metrics_similiar
+    metrics_bin = None # args.metrics_bin
+    metrics_similiar = None # args.metrics_similiar
 
     run_name = f'{args.output_dir}run-{args.run}-BM25'
     run_name += '-RM3' if args.rm3 == 'y' else ''
@@ -103,6 +103,7 @@ def main():
                 #best_queries_for_topics[query_id] = sorted(run_result[-1])
 
             run = reciprocal_rank_fusion(run_result, depth=args.K, k=args.K)
+            run.save(f'{index_output_name}-hits.trec')
             run = pd.DataFrame(data=run.to_numpy(), columns=['q_id', '_1', 'doc_id', '_2', 'score', '_3'])
             run = run.astype({'score': 'float'})
             run = Run.from_df(run)
@@ -120,9 +121,9 @@ def main():
 
             run = Run(run_result)
 
-        if args.save_hits == 'y':
-            safe_open_w(f'{index_output_name}-hits.json')
-            run.save(f'{index_output_name}-hits.json')
+        #if args.save_hits == 'y':
+        #    safe_open_w(f'{index_output_name}-hits.json')
+        #    run.save(f'{index_output_name}-hits.trec')
 
         # Evaluate
         results = {}
@@ -130,10 +131,10 @@ def main():
             results = evaluate(Qrels(qrels_bin), run, metrics_bin, make_comparable=True)
         if metrics_similiar:
             results.update({"ndcg": evaluate(Qrels(qrels_similiar), run, metrics_similiar, make_comparable=True)})
-
+        
         for metric in results:
             results[metric] = round(results[metric], 4)
-
+        
         with safe_open_w(f'{index_output_name}-metrics.json') as output_f:
             json.dump(results, output_f, indent=4)
 
